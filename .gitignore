@@ -1,0 +1,6 @@
+.idea/
+out/
+testfiles/
+*.txt
+*.iml
+*.rar
