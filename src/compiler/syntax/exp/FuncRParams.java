@@ -1,11 +1,13 @@
 package compiler.syntax.exp;
 
+import compiler.representation.Generator;
+import compiler.representation.quaternion.opnum.Arg;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 
 public class FuncRParams extends Nonterminal {
     private final ArrayList<Exp> params = new ArrayList<>();
@@ -22,11 +24,16 @@ public class FuncRParams extends Nonterminal {
         }
     }
 
-    public List<Integer> getShape() {
-        ArrayList<Integer> dims = new ArrayList<>();
-        for (Exp exp : params) {
-            dims.add(exp.getDim());
+    @Override
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        ArrayList<Integer> shape = new ArrayList<>();
+        ArrayList<Arg> args = new ArrayList<>();
+        for (Exp param : this.params) {
+            param.translate(rets, params);
+            args.add((Arg) rets.get("dst"));
+            shape.add((Integer) rets.get("dim"));
         }
-        return dims;
+        rets.put("args", args);
+        rets.put("dims", shape);
     }
 }

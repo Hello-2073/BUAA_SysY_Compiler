@@ -1,11 +1,11 @@
 package compiler.syntax.decl.func;
 
-import compiler.symbol.entry.VarEntry;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class FuncFParams extends Nonterminal {
@@ -23,11 +23,10 @@ public class FuncFParams extends Nonterminal {
         }
     }
 
-    public List<VarEntry> getEntries() {
-        List<VarEntry> entries = new ArrayList<>();
+    @Override
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
         for (FuncFParam fParam : fParams) {
-            entries.add(fParam.getEntry());
+            fParam.translate(rets, params);
         }
-        return entries;
     }
 }

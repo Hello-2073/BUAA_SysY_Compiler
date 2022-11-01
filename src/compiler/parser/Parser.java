@@ -1,9 +1,9 @@
-package compiler;
+package compiler.parser;
 
 import compiler.error.Error;
 import compiler.error.ErrorRecorder;
 import compiler.syntax.*;
-import compiler.syntax.cond.*;
+import compiler.syntax.exp.cond.*;
 import compiler.syntax.decl.*;
 import compiler.syntax.decl.var.*;
 import compiler.syntax.exp.*;
@@ -13,9 +13,9 @@ import compiler.syntax.exp.unaryExp.FuncCallUnaryExp;
 import compiler.syntax.exp.unaryExp.PrimaryUnaryExp;
 import compiler.syntax.exp.unaryExp.UnaryExp;
 import compiler.syntax.stmt.*;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
 
-import static compiler.type.SyntaxType.*;
+import static compiler.syntax.SyntaxType.*;
 
 public class Parser {
     private final Tokens tokens;
@@ -29,9 +29,7 @@ public class Parser {
     }
 
     private Terminal getTerminal() {
-        Terminal terminal = tokens.get();
-        //System.out.println(terminal.getContent());
-        return terminal;
+        return tokens.get();
     }
 
     private void mustGetTerminal(Nonterminal nonterminal, SyntaxType type, String error) {
@@ -47,11 +45,10 @@ public class Parser {
     }
 
     private Nonterminal compileUnit() {
-        /*
-            CompUnit → {Decl} {FuncDef} MainFuncDef
-                0(Decl):        {const, int},  1(Decl):        {int, Ident},  2(Decl):        {Ident, =, ;}
-                0(FuncDef):     {int, void},   1(Decl):        {Ident},       2(FuncDef):     {(}
-                0(MainFuncDef): {int},         1(MainFuncDef): {main},        2(MainFuncDef): {(}
+        /* CompUnit → {Decl} {FuncDef} MainFuncDef
+         *       0(Decl):        {const, int},  1(Decl):        {int, Ident},  2(Decl):        {Ident, =, ;}
+         *       0(FuncDef):     {int, void},   1(Decl):        {Ident},       2(FuncDef):     {(}
+         *       0(MainFuncDef): {int},         1(MainFuncDef): {main},        2(MainFuncDef): {(}
          */
         CompileUnit compileUnit = new CompileUnit();
         while (tokens.hasNext()) {
@@ -72,10 +69,9 @@ public class Parser {
     }
 
     private Decl decl() {
-        /* Rule: Decl → ConstDecl | VarDecl
-         *
-         *  0(ConstDecl): {const}
-         *  0(VarDecl):   {int}
+        /* Decl → ConstDecl | VarDecl
+         *      0(ConstDecl): {const}
+         *      0(VarDecl):   {int}
          */
         Decl decl = new Decl();
         if(tokens.getType(0) == CONSTTK) {
@@ -87,9 +83,9 @@ public class Parser {
     }
 
     private ConstDecl constDecl() {
-        /* Rule: ConstDecl → 'const' BType ConstDef { ',' ConstDef } ';' */
+        /* ConstDecl → 'const' BType ConstDef { ',' ConstDef } ';' */
         ConstDecl constDecl = new ConstDecl();
-        mustGetTerminal(constDecl, CONSTTK, "");
+        mustGetTerminal(constDecl, CONSTTK, null);
         constDecl.addChild(bType());
         constDecl.addChild(constDef());
         while (tokens.getType(0) == COMMA) {
@@ -101,30 +97,28 @@ public class Parser {
     }
 
     private BType bType() {
-        /* Rule: BType → 'int'
-         */
+        /* Rule: BType → 'int' */
         BType bType = new BType();
-        mustGetTerminal(bType, INTTK, "");
+        mustGetTerminal(bType, INTTK, null);
         return bType;
     }
 
     private ConstDef constDef() {
-        /* Rule: ConstDef → Ident { '[' ConstExp ']' } '=' ConstInitVal
-         */
+        /* ConstDef → Ident { '[' ConstExp ']' } '=' ConstInitVal */
         ConstDef constDef = new ConstDef();
-        mustGetTerminal(constDef, IDENFR, "");
+        mustGetTerminal(constDef, IDENFR, null);
         while (tokens.getType(0) == SyntaxType.LBRACK) {
             constDef.addChild(getTerminal());
             constDef.addChild(constExp());
             mustGetTerminal(constDef, RBRACK, "k");
         }
-        mustGetTerminal(constDef, ASSIGN, "");
+        mustGetTerminal(constDef, ASSIGN, null);
         constDef.addChild(constInitVal());
         return constDef;
     }
 
     private ConstInitVal constInitVal() {
-        /* Rule: ConstInitVal → ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}' */
+        /* ConstInitVal → ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}' */
         ConstInitVal constInitVal = new ConstInitVal();
         if (tokens.getType(0) == LBRACE) {
             constInitVal.addChild(getTerminal());
@@ -135,7 +129,7 @@ public class Parser {
                     constInitVal.addChild(constInitVal());
                 }
             }
-            mustGetTerminal(constInitVal, RBRACE, "");
+            mustGetTerminal(constInitVal, RBRACE, null);
         } else {
             constInitVal.addChild(constExp());
         }
@@ -156,9 +150,9 @@ public class Parser {
     }
 
     private VarDef varDef() {
-        /* Rule: VarDef → Ident { '[' ConstExp ']' } [ '=' InitVal ] */
+        /* VarDef → Ident { '[' ConstExp ']' } [ '=' InitVal ] */
         VarDef varDef = new VarDef();
-        mustGetTerminal(varDef, IDENFR, "");
+        mustGetTerminal(varDef, IDENFR, null);
         while (tokens.getType(0) == SyntaxType.LBRACK) {
             varDef.addChild(getTerminal());
             varDef.addChild(constExp());
@@ -172,7 +166,7 @@ public class Parser {
     }
 
     private InitVal initVal() {
-        /* Rule: InitVal → Exp | '{' [ InitVal { ',' InitVal } ] '}' */
+        /* InitVal → Exp | '{' [ InitVal { ',' InitVal } ] '}' */
         InitVal initVal = new InitVal();
         if (tokens.getType(0) == SyntaxType.LBRACE) {
             initVal.addChild(getTerminal());
@@ -183,7 +177,7 @@ public class Parser {
                     initVal.addChild(initVal());
                 }
             }
-            mustGetTerminal(initVal, RBRACE, "");
+            mustGetTerminal(initVal, RBRACE, null);
         } else {
             initVal.addChild(exp());
         }
@@ -191,7 +185,7 @@ public class Parser {
     }
 
     private FuncDef funcDef() {
-        /* Rule: FuncDef → FuncType Ident '(' [FuncFParams] ')' Block */
+        /* FuncDef → FuncType Ident '(' [FuncFParams] ')' Block */
         FuncDef funcDef = new FuncDef();
         funcDef.addChild(funcType());
         mustGetTerminal(funcDef, IDENFR, null);
@@ -207,9 +201,9 @@ public class Parser {
     private MainFuncDef mainFuncDef() {
         /* MainFuncDef → 'int' 'main' '(' ')' Block */
         MainFuncDef mainFuncDef = new MainFuncDef();
-        mustGetTerminal(mainFuncDef, INTTK, "");
-        mustGetTerminal(mainFuncDef, MAINTK, "");
-        mustGetTerminal(mainFuncDef, LPARENT, "");
+        mustGetTerminal(mainFuncDef, INTTK, null);
+        mustGetTerminal(mainFuncDef, MAINTK, null);
+        mustGetTerminal(mainFuncDef, LPARENT, null);
         mustGetTerminal(mainFuncDef, RPARENT, "j");
         mainFuncDef.addChild(block());
         return mainFuncDef;
@@ -243,7 +237,7 @@ public class Parser {
         /* FuncFParam → BType Ident ['[' ']' { '[' ConstExp ']' }] */
         FuncFParam funcFParam = new FuncFParam();
         funcFParam.addChild(bType());
-        mustGetTerminal(funcFParam, IDENFR, "");
+        mustGetTerminal(funcFParam, IDENFR, null);
         if (tokens.getType(0) == LBRACK) {
             funcFParam.addChild(getTerminal());
             mustGetTerminal(funcFParam, RBRACK, "k");
@@ -259,11 +253,11 @@ public class Parser {
     private Block block() {
         /* Block → '{' { BlockItem } '}' */
         Block block = new Block();
-        mustGetTerminal(block, LBRACE, "");
+        mustGetTerminal(block, LBRACE, null);
         while (tokens.getType(0) != RBRACE) {
             block.addChild(blockItem());
         }
-        mustGetTerminal(block, RBRACE, "");
+        mustGetTerminal(block, RBRACE, null);
         return block;
     }
 
@@ -298,12 +292,12 @@ public class Parser {
                 return stmt;
             case IDENFR:
                 return lValStmt();
-            case SEMICN:
             case INTCON:
             case LPARENT:
             case PLUS:
             case MINU:
             case NOT:
+            case SEMICN:
                 return expStmt();
             case IFTK:
             case WHILETK:
@@ -321,6 +315,7 @@ public class Parser {
     }
 
     private Stmt expStmt() {
+        /* [Exp] ';' */
         Stmt stmt = new ExpStmt();
         if (tokens.getType(0) != SEMICN) {
             stmt.addChild(exp());
@@ -330,6 +325,7 @@ public class Parser {
     }
 
     private Stmt breakOrContinueStmt() {
+        /* 'break' ';' | 'continue' ';' */
         Stmt stmt;
         if (tokens.getType(0) == CONTINUETK) {
             stmt = new ContinueStmt();
@@ -396,7 +392,7 @@ public class Parser {
         } else {
             stmt = new WhileStmt();
         }
-        tokens.get();
+        stmt.addChild(tokens.get());
         mustGetTerminal(stmt, LPARENT, null);
         stmt.addChild(cond());
         mustGetTerminal(stmt, RPARENT, "j");
@@ -557,7 +553,7 @@ public class Parser {
         return addExp;
     }
 
-    private compiler.syntax.cond.RelExp relExp() {
+    private RelExp relExp() {
         /* RelExp → AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp */
         RelExp relExp = new RelExp();
         relExp.addChild(addExp());
@@ -575,7 +571,7 @@ public class Parser {
         return relExp;
     }
 
-    private compiler.syntax.cond.EqExp eqExp() {
+    private EqExp eqExp() {
         /* EqExp → RelExp | EqExp ('==' | '!=') RelExp */
         EqExp eqExp = new EqExp();
         eqExp.addChild(relExp());
@@ -593,7 +589,7 @@ public class Parser {
         return eqExp;
     }
 
-    private compiler.syntax.cond.LAndExp lAndExp() {
+    private compiler.syntax.exp.cond.LAndExp lAndExp() {
         /* LAndExp → EqExp | LAndExp '&&' EqExp */
         LAndExp lAndExp = new LAndExp();
         lAndExp.addChild(eqExp());
@@ -607,7 +603,7 @@ public class Parser {
         return lAndExp;
     }
 
-    private compiler.syntax.cond.LOrExp lOrExp() {
+    private compiler.syntax.exp.cond.LOrExp lOrExp() {
         /* LOrExp → LAndExp | LOrExp '||' LAndExp */
         LOrExp lOrExp = new LOrExp();
         lOrExp.addChild(lAndExp());

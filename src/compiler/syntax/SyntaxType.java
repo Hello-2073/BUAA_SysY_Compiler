@@ -1,4 +1,4 @@
-package compiler.type;
+package compiler.syntax;
 
 public enum SyntaxType {
     CompUnit,

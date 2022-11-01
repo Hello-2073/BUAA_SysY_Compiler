@@ -1,18 +1,16 @@
 package compiler.syntax.decl.var;
 
-import compiler.error.Error;
-import compiler.error.ErrorRecorder;
-import compiler.symbol.SymbolTable;
-import compiler.symbol.entry.ConstEntry;
-import compiler.symbol.entry.Entry;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
+import compiler.syntax.decl.BType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 
 public class ConstDecl extends Nonterminal {
+    private BType bType;
     private final ArrayList<ConstDef> constDefs = new ArrayList<>();
 
     public ConstDecl() {
@@ -24,19 +22,17 @@ public class ConstDecl extends Nonterminal {
         super.addChild(child);
         if (child.getType() == SyntaxType.ConstDef) {
             constDefs.add((ConstDef) child);
+        } else if (child.getType() == SyntaxType.BType) {
+            bType = (BType) child;
         }
     }
 
     @Override
-    public void translate() {
-        super.translate();
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        bType.translate(rets, params);
+        params.put("bType", rets.get("bType"));
         for (ConstDef constDef : constDefs) {
-            try {
-                SymbolTable.insert(new ConstEntry(constDef.getName(), constDef.getDim()));
-            } catch (Exception e) {
-                System.out.println("第 " + constDef.getRow() + " 行：重复定义的标识符 " + constDef.getName() + "。");
-                ErrorRecorder.insert(new Error(constDef.getRow(), "b"));
-            }
+            constDef.translate(rets, params);
         }
     }
 }

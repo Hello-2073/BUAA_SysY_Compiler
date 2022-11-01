@@ -1,7 +1,7 @@
 package compiler.syntax.stmt;
 
 import compiler.syntax.*;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
 
 public abstract class Stmt extends Nonterminal {
     public Stmt() {

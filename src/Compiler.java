@@ -1,12 +1,17 @@
-import compiler.Source;
+import compiler.lexer.Source;
 import compiler.error.ErrorRecorder;
+import compiler.mips.Asm;
+import compiler.mips.Translator;
+import compiler.representation.Generator;
+import compiler.representation.module.Module;
 import compiler.syntax.Nonterminal;
-import compiler.Parser;
-import compiler.Tokens;
+import compiler.parser.Parser;
+import compiler.parser.Tokens;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
 
 public class Compiler {
     public static void main(String[] args) throws IOException {
@@ -15,27 +20,28 @@ public class Compiler {
 
         Source source = new Source(src);
 
-        System.out.println("【词法分析开始】");
         Tokens tokens = new Tokens(source);
-        System.out.println(tokens);
-        System.out.println("【词法分析结束】");
 
         Parser parser = new Parser(tokens);
 
-        System.out.println("【语法分析开始】");
         Nonterminal root = parser.parse();
-        System.out.println(root);
-        System.out.println("【语法分析结束】");
 
-        System.out.println("【语义分析开始】");
-        root.translate();
-        System.out.println("【语义分析结束】");
+        Generator.reset();
+        root.translate(new HashMap<>(), new HashMap<>());
 
-        System.out.println("【错误报告】");
         String errors = ErrorRecorder.info();
-        System.out.println(errors);
 
-        writeToFile(errors, "error.txt");
+        Module module = Generator.getModule();
+        System.out.println(module);
+
+        Translator.reset(module);
+        Translator.translate();
+        Asm asm = Translator.getAsm();
+
+        writeToFile(asm.toString(), "mips.txt");
+
+        //writeToFile(root.toString(), "output.txt");
+        //writeToFile(errors, "error.txt");
     }
 
     private static void writeToFile(String str, String dst)

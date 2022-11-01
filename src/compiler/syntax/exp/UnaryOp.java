@@ -1,9 +1,12 @@
 package compiler.syntax.exp;
 
+import compiler.representation.Generator;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
 import compiler.syntax.Terminal;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
+
+import java.util.HashMap;
 
 public class UnaryOp extends Nonterminal {
     private Terminal op;
@@ -27,7 +30,7 @@ public class UnaryOp extends Nonterminal {
     }
 
     @Override
-    public void translate() {
-        super.translate();
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        rets.put("op", op.getContent());
     }
 }

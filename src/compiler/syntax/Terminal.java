@@ -1,7 +1,5 @@
 package compiler.syntax;
 
-import compiler.type.SyntaxType;
-
 public class Terminal extends Syntax {
     private final String content;
     private final int row;

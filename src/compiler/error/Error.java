@@ -4,9 +4,17 @@ public class Error extends Exception implements Comparable <Error> {
     private int row;
     private String code;
 
+    public Error(String code) {
+        this.code = code;
+    }
+
     public Error(int row, String code) {
         this.row = row;
         this.code = code;
+    }
+
+    public void setRow(int row) {
+        this.row = row;
     }
 
     public int getRow() {

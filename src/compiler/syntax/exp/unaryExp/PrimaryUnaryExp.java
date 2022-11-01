@@ -1,22 +1,24 @@
 package compiler.syntax.exp.unaryExp;
 
 import compiler.syntax.Syntax;
-import compiler.syntax.exp.Calculable;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
+import compiler.syntax.exp.PrimaryExp;
+
+import java.util.HashMap;
 
 public class PrimaryUnaryExp extends UnaryExp {
-    private Calculable primaryExp;
+    private PrimaryExp primaryExp;
 
     @Override
     public void addChild(Syntax child) {
         super.addChild(child);
         if (child.getType() == SyntaxType.PrimaryExp) {
-            primaryExp = (Calculable) child;
+            primaryExp = (PrimaryExp) child;
         }
     }
 
     @Override
-    public Integer getDim() {
-        return primaryExp.getDim();
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        primaryExp.translate(rets, params);
     }
 }

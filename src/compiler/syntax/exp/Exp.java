@@ -2,9 +2,11 @@ package compiler.syntax.exp;
 
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
 
-public class Exp extends Nonterminal implements Calculable {
+import java.util.HashMap;
+
+public class Exp extends Nonterminal {
     private AddExp addExp;
 
     public Exp() {
@@ -20,7 +22,7 @@ public class Exp extends Nonterminal implements Calculable {
     }
 
     @Override
-    public Integer getDim() {
-        return addExp.getDim();
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        addExp.translate(rets, params);
     }
 }

@@ -1,9 +1,9 @@
-package compiler;
+package compiler.parser;
 
-import compiler.Source;
+import compiler.lexer.Source;
 import compiler.syntax.Terminal;
-import compiler.Lexer;
-import compiler.type.SyntaxType;
+import compiler.lexer.Lexer;
+import compiler.syntax.SyntaxType;
 
 import java.util.ArrayList;
 import java.util.List;

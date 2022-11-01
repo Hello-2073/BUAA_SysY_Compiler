@@ -1,5 +1,6 @@
 .idea/
 out/
+test/
 testfiles/
 *.txt
 *.iml

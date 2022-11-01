@@ -1,9 +1,7 @@
-package compiler;
+package compiler.lexer;
 
-import compiler.error.Error;
-import compiler.error.ErrorRecorder;
 import compiler.syntax.Terminal;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
 
 public class Lexer {
     private final Source source;

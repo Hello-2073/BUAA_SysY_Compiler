@@ -1,7 +1,7 @@
-package compiler.symbol;
+package compiler.symbol.scope;
 
+import compiler.error.Error;
 import compiler.symbol.entry.Entry;
-import compiler.type.ScopeType;
 
 import java.util.HashMap;
 
@@ -14,6 +14,10 @@ public class Scope {
         this.type = type;
         this.parent = parent;
         this.entrys = new HashMap<>();
+    }
+
+    public HashMap<String, Entry> getEntrys() {
+        return entrys;
     }
 
     public Scope getInnerLoopScope() {
@@ -40,22 +44,22 @@ public class Scope {
         return parent;
     }
 
-    public void insert(Entry entry) throws Exception {
+    public void insert(Entry entry) throws Error {
         String name = entry.getName();
         if (entrys.containsKey(name)) {
-            throw new Exception();
+            throw new Error("b");
         }
         entrys.put(name, entry);
     }
 
-    public Entry consult(String name) throws Exception {
-        System.out.println("当前符号表" + entrys + "，查询 name=" + name);
+    public Entry consult(String name) throws Error {
+        // System.out.println("当前符号表" + entrys + "，查询 name=" + name);
         if (entrys.containsKey(name)) {
-            System.out.println("存在" + name);
+            // System.out.println("存在" + name);
             return entrys.get(name);
         }
         if (parent == null) {
-            throw new Exception();
+            throw new Error("c");
         }
         return parent.consult(name);
     }

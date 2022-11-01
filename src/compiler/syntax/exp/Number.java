@@ -1,13 +1,16 @@
 package compiler.syntax.exp;
 
+import compiler.representation.Generator;
+import compiler.representation.quaternion.opnum.Imm;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
 import compiler.syntax.Terminal;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
 
-public class Number extends Nonterminal implements Calculable {
+import java.util.HashMap;
 
-    private int value;
+public class Number extends Nonterminal {
+    private Terminal intConst;
 
     public Number() {
         super(SyntaxType.Number);
@@ -16,20 +19,14 @@ public class Number extends Nonterminal implements Calculable {
     @Override
     public void addChild(Syntax child) {
         super.addChild(child);
+        if (child.getType() == SyntaxType.INTCON) {
+            intConst = (Terminal) child;
+        }
     }
 
     @Override
-    public void translate() {
-        super.translate();
-        value = Integer.parseInt(((Terminal) children.get(0)).getContent());
-    }
-
-    public int getValue() {
-        return value;
-    }
-
-    @Override
-    public Integer getDim() {
-        return 0;
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        rets.put("dst", new Imm(intConst.getContent()));
+        rets.put("dim", 0);
     }
 }

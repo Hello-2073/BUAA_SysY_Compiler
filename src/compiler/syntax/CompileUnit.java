@@ -5,8 +5,9 @@ import compiler.syntax.decl.func.FuncDef;
 import compiler.syntax.decl.func.MainFuncDef;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
-import static compiler.type.SyntaxType.*;
+import static compiler.syntax.SyntaxType.*;
 
 public class CompileUnit extends Nonterminal {
     private ArrayList<Decl> decls = new ArrayList<>();
@@ -36,11 +37,7 @@ public class CompileUnit extends Nonterminal {
     }
 
     @Override
-    public void translate() {
-        for (Syntax syntax : children) {
-            if (syntax instanceof Nonterminal) {
-                ((Nonterminal) syntax).translate();
-            }
-        }
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        super.translate(rets, params);
     }
 }

@@ -2,15 +2,14 @@ package compiler.syntax.decl.func;
 
 import compiler.error.Error;
 import compiler.error.ErrorRecorder;
-import compiler.symbol.SymbolTable;
-import compiler.symbol.entry.FuncEntry;
+import compiler.representation.Generator;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
 import compiler.syntax.Terminal;
-import compiler.syntax.Block;
-import compiler.type.SyntaxType;
+import compiler.syntax.stmt.Block;
+import compiler.syntax.SyntaxType;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 
 public class FuncDef extends Nonterminal {
     private FuncType funcType;
@@ -44,22 +43,19 @@ public class FuncDef extends Nonterminal {
     }
 
     @Override
-    public void translate() {
-        funcType.translate();
-        FuncEntry funcEntry = new FuncEntry(ident.getContent(), funcType.getFuncType());
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        funcType.translate(rets, params);
         try {
-            SymbolTable.insert(funcEntry);
-        } catch (Exception e) {
+            Generator.insertFuncSymbolAndEnterScope(ident.getContent(), (String) rets.get("funcType"));
+            params.put("funcName", ident.getContent());
+            if (funcFParams != null) {
+                funcFParams.translate(rets, params);
+            }
+            block.translate(rets, params);
+            Generator.exitScope();
+        }  catch (Error e) {
+            System.out.println("第" + ident.getRow() + "行：重复定义的符号" + ident.getContent());
             ErrorRecorder.insert(new Error(ident.getRow(), "b"));
         }
-        SymbolTable.enterScope(funcEntry);
-        if (funcFParams != null) {
-            funcFParams.translate();
-            funcEntry.setFParam(funcFParams.getEntries());
-        } else {
-            funcEntry.setFParam(new ArrayList<>());
-        }
-        block.translate();
-        SymbolTable.exitScope();
     }
 }

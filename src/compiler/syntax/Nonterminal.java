@@ -1,11 +1,10 @@
 package compiler.syntax;
 
-import compiler.type.SyntaxType;
-
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
-import static compiler.type.SyntaxType.*;
+import static compiler.syntax.SyntaxType.*;
 
 public abstract class Nonterminal extends Syntax {
     protected final List<Syntax> children = new ArrayList<>();
@@ -18,10 +17,10 @@ public abstract class Nonterminal extends Syntax {
         children.add(child);
     }
 
-    public void translate() {
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
         for (Syntax syntax : children) {
             if (syntax instanceof Nonterminal) {
-                ((Nonterminal) syntax).translate();
+                ((Nonterminal) syntax).translate(rets, params);
             }
         }
     }

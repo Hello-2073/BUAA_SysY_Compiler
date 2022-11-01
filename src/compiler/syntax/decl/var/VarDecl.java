@@ -2,15 +2,19 @@ package compiler.syntax.decl.var;
 
 import compiler.error.Error;
 import compiler.error.ErrorRecorder;
+import compiler.representation.Generator;
 import compiler.symbol.SymbolTable;
 import compiler.symbol.entry.VarEntry;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
+import compiler.syntax.decl.BType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class VarDecl extends Nonterminal {
+    private BType bType;
     private final ArrayList<VarDef> varDefs = new ArrayList<>();
 
     public VarDecl() {
@@ -22,19 +26,17 @@ public class VarDecl extends Nonterminal {
         super.addChild(child);
         if (child.getType() == SyntaxType.VarDef) {
             varDefs.add((VarDef) child);
+        } else if (child.getType() == SyntaxType.BType) {
+            bType = (BType) child;
         }
     }
 
     @Override
-    public void translate() {
-        super.translate();
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        bType.translate(rets, params);
+        params.put("bType", rets.get("bType"));
         for (VarDef varDef : varDefs) {
-            try {
-                SymbolTable.insert(new VarEntry(varDef.getName(), varDef.getDim()));
-            } catch (Exception e) {
-                System.out.println("第 " + varDef.getRow() + " 行：重复定义的标识符 " + varDef.getName() + "。");
-                ErrorRecorder.insert(new Error(varDef.getRow(), "b"));
-            }
+            varDef.translate(rets, params);
         }
     }
 }

@@ -1,4 +1,4 @@
-package compiler.type;
+package compiler.symbol.scope;
 
 public enum ScopeType {
     GLOBAL,

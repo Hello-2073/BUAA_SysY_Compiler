@@ -3,7 +3,9 @@ package compiler.syntax.decl.func;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
 import compiler.syntax.Terminal;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
+
+import java.util.HashMap;
 
 public class FuncType extends Nonterminal {
     private Terminal funcType;
@@ -18,7 +20,8 @@ public class FuncType extends Nonterminal {
         funcType = (Terminal) child;
     }
 
-    public String getFuncType() {
-        return funcType.getContent();
+    @Override
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        rets.put("funcType", funcType.getContent());
     }
 }

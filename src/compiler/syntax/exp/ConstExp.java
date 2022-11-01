@@ -1,10 +1,13 @@
 package compiler.syntax.exp;
 
+import compiler.representation.quaternion.opnum.Arg;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
 
-public class ConstExp extends Nonterminal implements Calculable {
+import java.util.HashMap;
+
+public class ConstExp extends Nonterminal {
     private AddExp addExp;
 
     public ConstExp() {
@@ -20,7 +23,10 @@ public class ConstExp extends Nonterminal implements Calculable {
     }
 
     @Override
-    public Integer getDim() {
-        return addExp.getDim();
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        addExp.translate(rets, params);
+        if (((Arg)rets.get("dst")).getType().equals("var")) {
+            System.out.println("必须是常量");
+        }
     }
 }

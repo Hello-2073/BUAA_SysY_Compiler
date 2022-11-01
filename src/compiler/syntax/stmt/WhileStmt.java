@@ -1,10 +1,14 @@
 package compiler.syntax.stmt;
 
-import compiler.symbol.SymbolTable;
+import compiler.representation.Generator;
+import compiler.representation.quaternion.Jump;
+import compiler.representation.quaternion.opnum.Label;
 import compiler.syntax.Syntax;
-import compiler.syntax.cond.Cond;
+import compiler.syntax.exp.cond.Cond;
 
-import static compiler.type.ScopeType.WHILE;
+import java.util.HashMap;
+
+import static compiler.symbol.scope.ScopeType.WHILE;
 
 public class WhileStmt extends Stmt {
     private Cond cond = null;
@@ -26,14 +30,19 @@ public class WhileStmt extends Stmt {
     }
 
     @Override
-    public void translate() {
-        cond.translate();
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        Label label = Generator.addLabel();
+        cond.translate(rets, params);
+        /* TODO: 如果false跳转至结束标签 */
         if (stmt instanceof BlockStmt) {
-            SymbolTable.enterScope(WHILE);
-            stmt.translate();
-            SymbolTable.exitScope();
+            Generator.enterScope(WHILE);
+            stmt.translate(rets, params);
+            Generator.exitScope();
         } else {
-            stmt.translate();
+            stmt.translate(rets, params);
         }
+        Generator.addQuaternion(new Jump(label));
+        Generator.addLabel(new Label(label.getName() + "_end"));
+        rets.replace("stmtType", "whileStmt");
     }
 }

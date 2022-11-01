@@ -1,10 +1,11 @@
 package compiler.syntax.stmt;
 
-import compiler.symbol.SymbolTable;
-import compiler.syntax.Block;
+import compiler.representation.Generator;
 import compiler.syntax.Syntax;
-import compiler.type.ScopeType;
-import compiler.type.SyntaxType;
+import compiler.symbol.scope.ScopeType;
+import compiler.syntax.SyntaxType;
+
+import java.util.HashMap;
 
 public class BlockStmt extends Stmt {
     private Block block;
@@ -18,9 +19,9 @@ public class BlockStmt extends Stmt {
     }
 
     @Override
-    public void translate() {
-        SymbolTable.enterScope(ScopeType.BASIC);
-        block.translate();
-        SymbolTable.exitScope();
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        Generator.enterScope(ScopeType.BASIC);
+        block.translate(rets, params);
+        Generator.exitScope();
     }
 }

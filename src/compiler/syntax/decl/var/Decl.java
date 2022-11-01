@@ -2,7 +2,9 @@ package compiler.syntax.decl.var;
 
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
+
+import java.util.HashMap;
 
 public class Decl extends Nonterminal {
     public Decl() {
@@ -15,7 +17,7 @@ public class Decl extends Nonterminal {
     }
 
     @Override
-    public void translate() {
-        super.translate();
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        super.translate(rets, params);
     }
 }

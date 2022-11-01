@@ -1,16 +1,26 @@
 package compiler.syntax.decl.var;
 
+import compiler.error.Error;
+import compiler.error.ErrorRecorder;
+import compiler.representation.Generator;
+import compiler.representation.quaternion.Single;
+import compiler.representation.quaternion.opnum.Arg;
+import compiler.representation.quaternion.opnum.Imm;
+import compiler.representation.quaternion.opnum.Var;
+import compiler.symbol.entry.VarEntry;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
 import compiler.syntax.Terminal;
 import compiler.syntax.exp.ConstExp;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class VarDef extends Nonterminal {
-    private Terminal ident;
-    private ArrayList<ConstExp> constExps = new ArrayList<>();
+    private Terminal ident = null;
+    private final ArrayList<ConstExp> constExps = new ArrayList<>();
+    private InitVal initVal = null;
 
     public VarDef() {
         super(SyntaxType.VarDef);
@@ -26,25 +36,30 @@ public class VarDef extends Nonterminal {
             case ConstExp:
                 constExps.add((ConstExp) child);
                 break;
+            case InitVal:
+                initVal = (InitVal) child;
+                break;
             default:
                 break;
         }
     }
 
     @Override
-    public void translate() {
-        super.translate();
-    }
-
-    public String getName() {
-        return ident.getContent();
-    }
-
-    public int getRow() {
-        return ident.getRow();
-    }
-
-    public int getDim() {
-        return constExps.size();
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        try {
+            ArrayList<Integer> ranges = new ArrayList<>();
+            for (ConstExp constExp : constExps) {
+                constExp.translate(rets, params);
+                ranges.add(((Imm)rets.get("dst")).getValue());
+            }
+            VarEntry varEntry = Generator.insertVarSymbol(ident.getContent(), ranges);
+            if (initVal != null) {
+                params.put("def", varEntry);
+                initVal.translate(rets, params);
+            }
+        } catch (Error e) {
+            System.out.println("第 " + ident.getRow() + " 行: 重定义的符号" + ident.getContent());
+            ErrorRecorder.insert(new Error(ident.getRow(), "b"));
+        }
     }
 }

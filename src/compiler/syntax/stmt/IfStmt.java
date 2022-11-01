@@ -1,10 +1,12 @@
 package compiler.syntax.stmt;
 
-import compiler.symbol.SymbolTable;
+import compiler.representation.Generator;
 import compiler.syntax.Syntax;
-import compiler.syntax.cond.Cond;
+import compiler.syntax.exp.cond.Cond;
 
-import static compiler.type.ScopeType.IF;
+import java.util.HashMap;
+
+import static compiler.symbol.scope.ScopeType.IF;
 
 public class IfStmt extends Stmt {
     private Cond cond = null;
@@ -31,21 +33,22 @@ public class IfStmt extends Stmt {
     }
 
     @Override
-    public void translate() {
-        cond.translate();
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        cond.translate(rets, params);
         if (stmt instanceof BlockStmt) {
-            SymbolTable.enterScope(IF);
-            stmt.translate();
-            SymbolTable.exitScope();
+            Generator.enterScope(IF);
+            stmt.translate(rets, params);
+            Generator.exitScope();
         } else {
-            stmt.translate();
+            stmt.translate(rets, params);
         }
         if (elseStmt instanceof BlockStmt) {
-            SymbolTable.enterScope(IF);
-            elseStmt.translate();
-            SymbolTable.exitScope();
+            Generator.enterScope(IF);
+            elseStmt.translate(rets, params);
+            Generator.exitScope();
         } else if (elseStmt != null) {
-            elseStmt.translate();
+            elseStmt.translate(rets, params);
         }
+        rets.replace("stmtType", "ifStmt");
     }
 }

@@ -1,12 +1,17 @@
 package compiler.syntax.exp;
 
+import compiler.representation.Generator;
+import compiler.representation.quaternion.Binary;
+import compiler.representation.quaternion.opnum.Arg;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
 import compiler.syntax.Terminal;
 import compiler.syntax.exp.unaryExp.UnaryExp;
-import compiler.type.SyntaxType;
+import compiler.syntax.SyntaxType;
 
-public class MulExp extends Nonterminal implements Calculable {
+import java.util.HashMap;
+
+public class MulExp extends Nonterminal {
     private MulExp mulExp = null;
     private Terminal op = null;
     private UnaryExp unaryExp = null;
@@ -36,12 +41,15 @@ public class MulExp extends Nonterminal implements Calculable {
     }
 
     @Override
-    public void translate() {
-        super.translate();
-    }
-
-    @Override
-    public Integer getDim() {
-        return unaryExp.getDim();
+    public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        unaryExp.translate(rets, params);
+        if (mulExp != null) {
+            assert op != null;
+            Arg src2 = (Arg) rets.get("dst");
+            mulExp.translate(rets, params);
+            Arg src1 = (Arg) rets.get("dst");
+            Arg dst = Generator.addBinary(op.getContent(), src1, src2);
+            rets.put("dst", dst);
+        }
     }
 }

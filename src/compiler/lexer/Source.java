@@ -1,4 +1,4 @@
-package compiler;
+package compiler.lexer;
 
 import java.io.IOException;
 import java.nio.file.Files;
