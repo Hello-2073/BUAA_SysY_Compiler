@@ -76,7 +76,9 @@ public class Generator {
     public static Arg addSingle(String op, Arg src) {
         if (src.getType() == OpnumType.Imm) {
             return Imm.calculate(op, (Imm) src);
-        } else if (src.getType() == OpnumType.Var || src.getType() == OpnumType.Tmp) {
+        } else if (src.getType() == OpnumType.Var
+                || src.getType() == OpnumType.Tmp
+                || src.getType() == OpnumType.RetValue) {
             Tmp tmp = newTmp();
             module.addQuaternion(new Single(op, tmp, src));
             return tmp;

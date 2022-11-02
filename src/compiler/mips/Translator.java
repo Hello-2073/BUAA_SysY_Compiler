@@ -53,7 +53,10 @@ public class Translator {
                 return "$v0";
             case Tmp:
                 if (tRegMap.containsKey((Tmp) arg)) {
-                    return tRegMap.get(arg);
+                    String reg = tRegMap.get(arg);
+                    tRegMap.remove(arg);
+                    registers.freeTmp(reg.charAt(2) - '0');
+                    return reg;
                 } else {
                     String reg = "$t" + registers.allocTmp();
                     tRegMap.put((Tmp) arg, reg);
@@ -62,6 +65,14 @@ public class Translator {
             case Var:
                 if (sRegMap.containsKey((Var) arg)) {
                     return sRegMap.get(arg);
+                } else {
+                    int b = registers.allocSave();
+                    if (b != -1) {
+                        String reg = "$s" + b;
+                        loadVar((Var) arg, reg);
+                        sRegMap.put(((Var) arg), reg);
+                        return reg;
+                    }
                 }
                 return null;
             default:
@@ -400,15 +411,22 @@ public class Translator {
             String reg = sRegMap.get(arg);
             asm.addLine("sw   \t" + reg + ",\t" + arg.getOffset() + "($fp)");
         }
+        asm.addLine("addiu\t$sp, \t$sp, \t-32");
+        for (int i = 0; i < 8; i++) {
+            asm.addLine("sw\t$t" + i + ", \t" + (4 * i) + "($sp)");
+        }
         List<Arg> args = call.getArgs();
+        if (args.size() > 4) {
+            asm.addLine("subiu\t$sp  \t$sp  \t" + 4 * (args.size() - 4));
+        }
         for (int i = 0; i < args.size(); i++) {
             Arg arg = args.get(i);
             if (arg.getType() == OpnumType.Imm) {
-                if (i <4) {
+                if (i < 4) {
                     asm.addLine("li   \t$a" + i + ",  \t" + arg);
                 } else {
                     asm.addLine("li   \t$v0, \t" + arg);
-                    asm.addLine("sw   \t$v0, \t" +  (- 4 * (i - 3)) + "($sp)");
+                    asm.addLine("sw   \t$v0, \t" + (4 * (i - 4)) + "($sp)");
                 }
             } else {
                 String argReg = getReg(args.get(i));
@@ -416,21 +434,22 @@ public class Translator {
                     argReg = "$v0";
                     loadVar(((Var) args.get(i)), "$v0");
                 }
-                if (i <4) {
+                if (i < 4) {
                     asm.addLine("move \t" + "$a" + i + ",  \t" + argReg);
                 } else {
-                    asm.addLine("sw   \t" + argReg + "  \t" +  (- 4 * (i - 3)) + "($sp)");
+                    asm.addLine("sw   \t" + argReg + "  \t" +  (4 * (i - 4)) + "($sp)");
                 }
             }
-        }
-        if (args.size() > 4) {
-            asm.addLine("subiu\t$sp  \t$sp  \t" + 4 * (args.size() - 4));
         }
         asm.addLine("jal   \t" + call.getLabel());
         asm.addLine("nop");
         if (args.size() > 4) {
             asm.addLine("addiu\t$sp  \t$sp  \t" + 4 * (args.size() - 4));
         }
+        for (int i = 0; i < 8; i++) {
+            asm.addLine("lw\t$t" + i + ", \t" + (4 * i) + "($sp)");
+        }
+        asm.addLine("addiu\t$sp, \t$sp, \t32");
         for (Var arg : sRegMap.keySet()) {
             String reg = sRegMap.get(arg);
             asm.addLine("lw   \t" + reg + ",\t" + arg.getOffset() + "($fp)");

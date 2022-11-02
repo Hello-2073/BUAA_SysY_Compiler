@@ -1,14 +1,23 @@
 package compiler.mips;
 
 public class Registers {
-    private int tmp = 0;
+    private int tBitMap = 0;
     private int save = 0;
 
     public Registers() {}
 
     public int allocTmp() {
-        tmp = (tmp + 1) % 8;
-        return tmp;
+        for (int i = 0; i < 8; i++) {
+            if (((tBitMap) >> i & 1) == 0) {
+                tBitMap |= 1 << i;
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public void freeTmp(int i) {
+        tBitMap &= ~(1 << i);
     }
 
     public int allocSave() {

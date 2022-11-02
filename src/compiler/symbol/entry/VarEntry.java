@@ -47,10 +47,11 @@ public class VarEntry extends Entry {
 
     public int size() {
         int size = 4;
-        if (shape != null) {
-            for (int n : shape) {
-                size *= n;
+        for (Integer n : shape) {
+            if (n == null) {
+                return 4;
             }
+            size *= n;
         }
         return size;
     }
