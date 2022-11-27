@@ -8,7 +8,7 @@ public class ConstEntry extends VarEntry {
     private final List<Integer> weight;
 
     public ConstEntry(String name, ArrayList<Integer> shape, boolean isGlobal) {
-        super(name, shape, isGlobal);
+        super(name, shape, isGlobal, false);
         this.shape = shape;
         weight = new ArrayList<>(shape);
         if (shape.size() > 0) {

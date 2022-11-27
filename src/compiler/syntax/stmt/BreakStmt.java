@@ -21,7 +21,7 @@ public class BreakStmt extends Stmt {
     @Override
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
         rets.replace("stmtType", "breakStmt");
-        Arg label = (Arg) params.get("loopEndLabel");
+        Arg label = (Arg) params.get("whileTail");
         if (label == null) {
             ErrorRecorder.insert(new Error(((Terminal)children.get(0)).getRow(), "m"));
         }

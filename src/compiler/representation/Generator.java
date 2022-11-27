@@ -2,10 +2,7 @@ package compiler.representation;
 
 import compiler.error.Error;
 import compiler.representation.module.Module;
-import compiler.representation.quaternion.Binary;
-import compiler.representation.quaternion.Call;
-import compiler.representation.quaternion.Quaternion;
-import compiler.representation.quaternion.Single;
+import compiler.representation.quaternion.*;
 import compiler.representation.quaternion.opnum.*;
 import compiler.symbol.SymbolTable;
 import compiler.symbol.entry.ConstEntry;
@@ -41,15 +38,21 @@ public class Generator {
     }
 
     public static VarEntry insertVarSymbol(String name, ArrayList<Integer> indices) throws Error {
-        return symbolTable.insertVarSymbol(name, indices);
+        VarEntry varEntry = symbolTable.insertVarSymbol(name, indices);
+        module.addLocalVar(new Var(varEntry));
+        return varEntry;
     }
 
     public static ConstEntry insertConstSymbol(String name, ArrayList<Integer> indices) throws Error {
-        return symbolTable.insertConstSymbol(name, indices);
+        ConstEntry constEntry = symbolTable.insertConstSymbol(name, indices);
+        module.addLocalVar(new Var(constEntry));
+        return constEntry;
     }
 
     public static VarEntry insertFParamSymbol(String name, ArrayList<Integer> indices) throws Error {
-        return symbolTable.insertFParamSymbol(name, indices);
+        VarEntry varEntry = symbolTable.insertFParamSymbol(name, indices);
+        module.addLocalVar(new Var(varEntry));
+        return varEntry;
     }
 
     public static FuncEntry insertFuncSymbolAndEnterScope(String name, String funcType) throws Error {
@@ -58,15 +61,12 @@ public class Generator {
         return funcEntry;
     }
 
-    public static Label addLabel() {
-        Label tag = new Label(String.valueOf(tagCnt++));
-        module.newBlock(tag);
-        return tag;
+    public static Label allocLabel() {
+        return new Label("$L" + String.valueOf(tagCnt++));
     }
 
-    public static void addLabel(Label tag) {
-        tmpCnt = 0;
-        module.newBlock(tag);
+    public static void addLabel(Label label) {
+        module.newBlock(label);
     }
 
     public static Tmp newTmp() {
@@ -90,21 +90,26 @@ public class Generator {
     public static Arg addBinary(String op, Arg src1, Arg src2) {
         if (src1.getType() == OpnumType.Imm && src2.getType() == OpnumType.Imm ) {
             return Imm.calculate(op, (Imm) src1, (Imm) src2);
-        } else if (src1.getType() != OpnumType.Imm) {
+        } else {
             Tmp tmp = newTmp();
             module.addQuaternion(new Binary(op, tmp, src1, src2));
             return tmp;
-        } else if (src2.getType() != OpnumType.Imm) {
-            Tmp tmp = newTmp();
-            module.addQuaternion(new Binary(op, tmp, src2, src1));
-            return tmp;
-        } else {
-            throw new RuntimeException();
         }
     }
 
     public static void addFunctionCall(Label label, List<Arg> args) {
         module.addQuaternion(new Call(label, args));
+    }
+
+    public static void addBreakIf(String op, Arg src1, Arg src2, Label label) {
+        if (src1.getType() == OpnumType.Imm && src2.getType() == OpnumType.Imm ) {
+             Imm res = Imm.calculate(op, (Imm) src1, (Imm) src2);
+             if (res.getValue() != 0) {
+                 module.addQuaternion(new Jump(label));
+             }
+        } else {
+            module.addQuaternion(new Break(op, src1, src2, label));
+        }
     }
 
     public static void addQuaternion(Quaternion quaternion) {

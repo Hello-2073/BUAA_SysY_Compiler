@@ -20,26 +20,6 @@ public class Scope {
         return entrys;
     }
 
-    public Scope getInnerLoopScope() {
-        if (type == ScopeType.WHILE) {
-            return this;
-        }
-        if (parent == null) {
-            return null;
-        }
-        return parent.getInnerLoopScope();
-    }
-
-    public Scope getInnerFuncScope() {
-        if (type == ScopeType.FUNC) {
-            return this;
-        }
-        if (parent == null) {
-            return null;
-        }
-        return parent.getInnerFuncScope();
-    }
-
     public Scope getParent() {
         return parent;
     }
@@ -53,9 +33,9 @@ public class Scope {
     }
 
     public Entry consult(String name) throws Error {
-        // System.out.println("当前符号表" + entrys + "，查询 name=" + name);
+        //System.out.println("当前符号表" + entrys + "，查询 name=" + name);
         if (entrys.containsKey(name)) {
-            // System.out.println("存在" + name);
+            //System.out.println("存在" + name + " " + entrys.get(name).getClass());
             return entrys.get(name);
         }
         if (parent == null) {

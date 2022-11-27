@@ -15,6 +15,18 @@ public class Imm extends Arg {
                 return new Imm(src1.getValue() / src2.getValue());
             case "%":
                 return new Imm(src1.getValue() % src2.getValue());
+            case "==":
+                return new Imm(src1.getValue() == src2.getValue() ? 1 : 0);
+            case "!=":
+                return new Imm(src1.getValue() != src2.getValue() ? 1 : 0);
+            case ">=":
+                return new Imm(src1.getValue() >= src2.getValue() ? 1 : 0);
+            case "<=":
+                return new Imm(src1.getValue() <= src2.getValue() ? 1 : 0);
+            case ">":
+                return new Imm(src1.getValue() > src2.getValue() ? 1 : 0);
+            case "<":
+                return new Imm(src1.getValue() < src2.getValue() ? 1 : 0);
             default:
                 throw new RuntimeException("未知运算符" + op);
         }

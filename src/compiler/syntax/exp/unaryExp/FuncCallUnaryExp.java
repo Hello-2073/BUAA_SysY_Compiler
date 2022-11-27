@@ -53,15 +53,15 @@ public class FuncCallUnaryExp extends UnaryExp {
                 }
             }
             Label label = new Label(funcEntry.getName());
-            List<Arg> args = (List<Arg>) rets.get("args");
-            if (args == null) {
-                args = new ArrayList<>();
+            if (rParams != null) {
+                List<Arg> args = (List<Arg>) rets.get("args");
+                Generator.addFunctionCall(label, args);
+            } else {
+                Generator.addFunctionCall(label, new ArrayList<>());
             }
-            Generator.addFunctionCall(label, args);
             Arg dst = Generator.addSingle("+", new RetValue());
             rets.put("dst", dst);
         } catch (Exception e) {
-            System.out.println(Arrays.toString(e.getStackTrace()));
             System.out.println("第 " + ident.getRow() + " 行：未定义的标识符" + ident.getContent());
             ErrorRecorder.insert(new Error(ident.getRow(), "c"));
         }

@@ -1,6 +1,7 @@
 package compiler.syntax.decl.var;
 
 import compiler.representation.Generator;
+import compiler.representation.quaternion.Save;
 import compiler.representation.quaternion.Single;
 import compiler.representation.quaternion.opnum.Arg;
 import compiler.representation.quaternion.opnum.Imm;
@@ -40,15 +41,20 @@ public class InitVal extends Nonterminal {
 
     @Override
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
-        super.translate(rets, params);
         if (exp != null) {
             exp.translate(rets, params);
             Arg initVal = (Arg) rets.get("dst");
             VarEntry entry = (VarEntry) params.get("def");
             if (!entry.isGlobal()) {
-                Generator.addQuaternion(new Single("+", new Var(entry), initVal));
-            } else if (initVal.getType() == OpnumType.Imm) {
-                entry.addInitVal(((Imm) initVal).getValue());
+                if (entry.getDim() > 0) {
+                    Imm index = new Imm(entry.getInitVals().size());
+                    Generator.addQuaternion(new Save(new Var(entry), index, initVal));
+                } else {
+                    Generator.addQuaternion(new Single("+", new Var(entry), initVal));
+                }
+            }
+            if (initVal instanceof Imm) {
+                entry.addInitVal(((Imm)initVal).getValue());
             } else {
                 entry.addInitVal(0);
             }

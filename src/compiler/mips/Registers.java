@@ -2,7 +2,7 @@ package compiler.mips;
 
 public class Registers {
     private int tBitMap = 0;
-    private int save = 0;
+    private int sBitMap = 0;
 
     public Registers() {}
 
@@ -21,13 +21,17 @@ public class Registers {
     }
 
     public int allocSave() {
-        if (save < 8) {
-            return save++;
+        if (sBitMap < 8) {
+            return sBitMap++;
         }
         return -1;
     }
 
-    public void freeSave() {
-        save = 0;
+    public void freeAllSave() {
+        sBitMap = 0;
+    }
+
+    public void freeAllTmp() {
+        tBitMap = 0;
     }
 }

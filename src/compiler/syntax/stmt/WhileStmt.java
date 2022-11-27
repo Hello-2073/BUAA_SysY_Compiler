@@ -7,6 +7,7 @@ import compiler.syntax.Syntax;
 import compiler.syntax.exp.cond.Cond;
 
 import java.util.HashMap;
+import java.util.List;
 
 import static compiler.symbol.scope.ScopeType.WHILE;
 
@@ -31,18 +32,27 @@ public class WhileStmt extends Stmt {
 
     @Override
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
-        Label label = Generator.addLabel();
+        Label whileHead = Generator.allocLabel();
+        Label whileTail = Generator.allocLabel();
+        Label trueForCond = Generator.allocLabel();
+        Label falseForCond = whileTail;
+
+        Generator.addLabel(whileHead);
+        params.put("trueForCond", falseForCond);
+        params.put("falseForCond", falseForCond);
         cond.translate(rets, params);
-        /* TODO: 如果false跳转至结束标签 */
-        if (stmt instanceof BlockStmt) {
-            Generator.enterScope(WHILE);
-            stmt.translate(rets, params);
-            Generator.exitScope();
-        } else {
-            stmt.translate(rets, params);
-        }
-        Generator.addQuaternion(new Jump(label));
-        Generator.addLabel(new Label(label.getName() + "_end"));
+
+        Generator.addLabel(trueForCond);
+        Label saveHead = (Label) params.get("whileHead");
+        Label saveTail = (Label) params.get("whileTail");
+        params.put("whileHead", whileHead);
+        params.put("whileTail", whileTail);
+        stmt.translate(rets, params);
+        params.put("whileHead", saveHead);
+        params.put("whileTail", saveTail);
+        Generator.addQuaternion(new Jump(whileHead));
+        Generator.addLabel(falseForCond);
+
         rets.replace("stmtType", "whileStmt");
     }
 }

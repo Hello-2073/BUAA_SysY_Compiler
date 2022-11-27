@@ -47,10 +47,6 @@ public class SymbolTable {
 
     public void insert(Entry entry) throws Error {
         currentScope.insert(entry);
-        if (entry instanceof VarEntry && currentFunc != null) {
-            ((VarEntry) entry).setOffset(currentFunc.getSpace());
-            currentFunc.addSpace(((VarEntry) entry).size());
-        }
     }
 
     public Entry consult(String name) throws Error {
@@ -58,39 +54,26 @@ public class SymbolTable {
     }
 
     public String getCurrentFuncType() {
-        if (currentFunc == null) {
-            return null;
-        }
-        return currentFunc.getFuncType();
+        return currentFunc == null ? null : currentFunc.getFuncType();
     }
 
     public VarEntry insertVarSymbol(String name, ArrayList<Integer> indices) throws Error {
-        VarEntry varEntry = new VarEntry(name, indices, currentFunc == null);
+        VarEntry varEntry = new VarEntry(name, indices, currentFunc == null, false);
         currentScope.insert(varEntry);
-        if (currentFunc != null) {
-            varEntry.setOffset(currentFunc.getSpace());
-            currentFunc.addSpace(varEntry.size());
-        }
         return varEntry;
     }
 
     public ConstEntry insertConstSymbol(String name, ArrayList<Integer> indices) throws Error {
         ConstEntry constEntry = new ConstEntry(name, indices, currentFunc == null);
         currentScope.insert(constEntry);
-        if (currentFunc != null) {
-            constEntry.setOffset(currentFunc.getSpace());
-            currentFunc.addSpace(constEntry.size());
-        }
         return constEntry;
     }
 
     public VarEntry insertFParamSymbol(String name, ArrayList<Integer> indices) throws Error {
         assert currentFunc != null;
-        VarEntry varEntry = new VarEntry(name, indices, false);
+        VarEntry varEntry = new VarEntry(name, indices, false, true);
         currentScope.insert(varEntry);
         currentFunc.addFParam(varEntry);
-        varEntry.setOffset(currentFunc.getSpace());
-        currentFunc.addSpace(varEntry.size());
         return varEntry;
     }
 

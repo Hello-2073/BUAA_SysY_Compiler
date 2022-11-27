@@ -1,6 +1,7 @@
 package compiler.syntax.decl.var;
 
 import compiler.representation.Generator;
+import compiler.representation.quaternion.Save;
 import compiler.representation.quaternion.Single;
 import compiler.representation.quaternion.opnum.Imm;
 import compiler.representation.quaternion.opnum.Var;
@@ -38,15 +39,19 @@ public class ConstInitVal extends Nonterminal {
 
     @Override
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
-        super.translate(rets, params);
         if (constExp != null) {
             constExp.translate(rets, params);
             Imm initVal = (Imm) rets.get("dst");
             ConstEntry entry = (ConstEntry) params.get("def");
-            entry.addInitVal(initVal.getValue());
             if (!entry.isGlobal()) {
-                Generator.addQuaternion(new Single("+", new Var(entry), initVal));
+                if (entry.getDim() > 0) {
+                    Imm index = new Imm(entry.getInitVals().size());
+                    Generator.addQuaternion(new Save(new Var(entry), index, initVal));
+                } else {
+                    Generator.addQuaternion(new Single("+", new Var(entry), initVal));
+                }
             }
+            entry.addInitVal(initVal.getValue());
         } else {
             for (ConstInitVal constInitVal : constInitVals) {
                 constInitVal.translate(rets, params);

@@ -1,6 +1,6 @@
 package compiler.syntax.exp;
 
-import compiler.representation.quaternion.opnum.Arg;
+import compiler.representation.quaternion.opnum.Imm;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
 import compiler.syntax.SyntaxType;
@@ -25,8 +25,6 @@ public class ConstExp extends Nonterminal {
     @Override
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
         addExp.translate(rets, params);
-        if (((Arg)rets.get("dst")).getType().equals("var")) {
-            System.out.println("必须是常量");
-        }
+        assert rets.get("dst") instanceof Imm;
     }
 }

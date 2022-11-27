@@ -2,6 +2,7 @@ package compiler.representation.module;
 
 import compiler.representation.quaternion.Quaternion;
 import compiler.representation.quaternion.opnum.Label;
+import compiler.representation.quaternion.opnum.Var;
 import compiler.symbol.SymbolTable;
 import compiler.symbol.entry.FuncEntry;
 import compiler.symbol.entry.VarEntry;
@@ -13,6 +14,7 @@ public class Module {
     private Function curFunc;
     private final ArrayList<Function> functions = new ArrayList<>();
     private final HashMap<Label, String> constStr = new HashMap<>();
+    private final ArrayList<Var> globalVars = new ArrayList<>();
 
     private final SymbolTable symbolTable;
 
@@ -46,6 +48,14 @@ public class Module {
         curFunc.addQuaternion(quaternion);
     }
 
+    public void addLocalVar(Var localVar) {
+        if (curFunc == null) {
+            globalVars.add(localVar);
+        } else {
+            curFunc.addLocalVar(localVar);
+        }
+    }
+
     public ArrayList<Function> getFunctions() {
         return functions;
     }
@@ -65,6 +75,13 @@ public class Module {
                 }
             }
             sb.append("\"\n");
+        }
+        for (Var var : globalVars) {
+            sb.append(var);
+            sb.append(var.getShape());
+            sb.append("=");
+            sb.append(var.getInitVals());
+            sb.append("\n");
         }
         sb.append("\n");
         for (Function function : functions) {

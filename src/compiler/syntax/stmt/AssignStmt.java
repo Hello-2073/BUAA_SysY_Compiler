@@ -38,9 +38,13 @@ public class AssignStmt extends Stmt {
         exp.translate(rets, params);
         Arg src = (Arg) rets.get("dst");
         if (offset != null) {
-            Generator.addQuaternion(new Save(src, dst, offset));
+            Generator.addQuaternion(new Save(dst, offset, src));
+            rets.put("dst", src);
         } else {
             Generator.addQuaternion(new Single("+", dst, src));
+            rets.put("dst", dst);
         }
+        rets.put("offset", null);
+        rets.replace("stmtType", "AssignStmt");
     }
 }

@@ -40,8 +40,8 @@ public class Compiler {
 
         writeToFile(asm.toString(), "mips.txt");
 
-        //writeToFile(root.toString(), "output.txt");
-        //writeToFile(errors, "error.txt");
+        writeToFile(root.toString(), "output.txt");
+        writeToFile(errors, "error.txt");
     }
 
     private static void writeToFile(String str, String dst)

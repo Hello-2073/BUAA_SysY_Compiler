@@ -4,19 +4,12 @@ import compiler.representation.quaternion.opnum.Arg;
 import compiler.representation.quaternion.opnum.Label;
 
 public class Load extends Quaternion {
-    private final Arg register;
-    private final Arg symbol;
-    private final Arg offset;
-
-    public Load(Arg register, Arg symbol, Arg offset) {
-        super(Operations.LOAD, register, symbol, offset);
-        this.register = register;
-        this.symbol = symbol;
-        this.offset = offset;
+    public Load(Arg dst, Arg src1, Arg src2) {
+        super(Operations.LOAD, dst, src1, src2);
     }
 
     @Override
     public String toString() {
-        return register + " = " + symbol + "[" + offset + "]";
+        return getDst() + " = " + getSrc1() + "[" + getSrc2() + "]";
     }
 }

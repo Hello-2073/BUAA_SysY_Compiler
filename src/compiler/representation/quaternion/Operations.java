@@ -12,5 +12,5 @@ public enum Operations {
     SINGLE,
     PARAM,
     READ,
-    WRITE
+    BREAK, WRITE
 }

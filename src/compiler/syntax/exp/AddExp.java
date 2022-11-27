@@ -41,13 +41,15 @@ public class AddExp extends Nonterminal {
 
     @Override
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
-        mulExp.translate(rets, params);
         if (addExp != null) {
-            Arg src2 = (Arg) rets.get("dst");
             addExp.translate(rets, params);
             Arg src1 = (Arg) rets.get("dst");
+            mulExp.translate(rets, params);
+            Arg src2 = (Arg) rets.get("dst");
             Arg dst = Generator.addBinary(op.getContent(), src1, src2);
             rets.put("dst", dst);
+        } else {
+            mulExp.translate(rets, params);
         }
     }
 }

@@ -2,8 +2,8 @@ package compiler.syntax.exp;
 
 import compiler.representation.Generator;
 import compiler.representation.quaternion.Load;
-import compiler.representation.quaternion.Quaternion;
 import compiler.representation.quaternion.opnum.Arg;
+import compiler.representation.quaternion.opnum.Imm;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
 import compiler.syntax.SyntaxType;
@@ -41,11 +41,21 @@ public class PrimaryExp extends Nonterminal {
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
         super.translate(rets, params);
         if (lVal != null && rets.get("offset") != null) {
-            Arg src1 = (Arg) rets.get("dst");
-            Arg src2 = (Arg) rets.get("offset");
-            Arg dst = Generator.newTmp();
-            Generator.addQuaternion(new Load(dst, src1, src2));
-            rets.put("dst", dst);
+            if ((Integer)rets.get("dim") == 0) {
+                Arg src1 = (Arg) rets.get("dst");
+                Arg src2 = (Arg) rets.get("offset");
+                if (src2 != null) {
+                    Arg dst = Generator.newTmp();
+                    Generator.addQuaternion(new Load(dst, src1, src2));
+                    rets.put("dst", dst);
+                }
+            } else {
+                Arg src1 = (Arg) rets.get("dst");
+                Arg src2 = (Arg) rets.get("offset");
+                Arg dst = Generator.addBinary("*", src2, new Imm(4));
+                dst = Generator.addBinary("+", src1, dst);
+                rets.put("dst", dst);
+            }
         }
     }
 }

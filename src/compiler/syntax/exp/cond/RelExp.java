@@ -43,14 +43,16 @@ public class RelExp extends Nonterminal {
     @Override
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
         assert addExp != null;
-        addExp.translate(rets, params);
         if (relExp != null) {
             assert op != null;
-            Arg src2 = (Arg) rets.get("dst");
             relExp.translate(rets, params);
             Arg src1 = (Arg) rets.get("dst");
+            addExp.translate(rets, params);
+            Arg src2 = (Arg) rets.get("dst");
             Arg dst = Generator.addBinary(op.getContent(), src1, src2);
             rets.replace("dst", dst);
+        } else {
+            addExp.translate(rets, params);
         }
     }
 }

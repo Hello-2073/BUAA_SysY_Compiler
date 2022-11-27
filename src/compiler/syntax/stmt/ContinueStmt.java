@@ -21,7 +21,7 @@ public class ContinueStmt extends Stmt {
     @Override
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
         rets.replace("stmtType", "continueStmt");
-        Arg label = (Arg) params.get("loopBeginLabel");
+        Arg label = (Arg) params.get("whileHead");
         if (label == null) {
             ErrorRecorder.insert(new Error(((Terminal)children.get(0)).getRow(), "m"));
         }

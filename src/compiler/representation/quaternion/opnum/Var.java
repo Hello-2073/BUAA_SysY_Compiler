@@ -2,6 +2,8 @@ package compiler.representation.quaternion.opnum;
 
 import compiler.symbol.entry.VarEntry;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class Var extends Arg {
@@ -16,12 +18,28 @@ public class Var extends Arg {
         return varEntry.isGlobal();
     }
 
+    public boolean isFParam() {
+        return varEntry.isFParam();
+    }
+
+    public int getDim() {
+        return varEntry.getDim();
+    }
+
+    public List<Integer> getShape() {
+        return varEntry.getShape();
+    }
+
+    public List<Integer> getInitVals() {
+        return varEntry.getInitVals();
+    }
+
     public String getName() {
         return varEntry.getName();
     }
 
-    public int getOffset() {
-        return varEntry.getOffset();
+    public int size() {
+        return varEntry.size();
     }
 
     public VarEntry getVarEntry() {

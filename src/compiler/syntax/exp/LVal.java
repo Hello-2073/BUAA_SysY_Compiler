@@ -4,6 +4,7 @@ import compiler.error.Error;
 import compiler.error.ErrorRecorder;
 import compiler.representation.Generator;
 import compiler.representation.quaternion.Binary;
+import compiler.representation.quaternion.Load;
 import compiler.representation.quaternion.opnum.Arg;
 import compiler.representation.quaternion.opnum.Imm;
 import compiler.representation.quaternion.opnum.OpnumType;
@@ -46,37 +47,36 @@ public class LVal extends Nonterminal {
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
         try {
             VarEntry var = (VarEntry) Generator.consultSymbol(ident.getContent());
-            if ("def".equals(params.get("lValUsage")) && var instanceof ConstEntry) {
+            if (var instanceof ConstEntry && "def".equals(params.get("lValUse"))) {
                 System.out.println("第 " + ident.getRow() + " 行：为常量赋值。");
                 ErrorRecorder.insert(new Error(ident.getRow(), "h"));
             }
             Arg offset = null;
-            if (indices.size() > 0) {
-                ArrayList<Integer> weights = var.getWeights();
-                for (int i = 0; i < indices.size(); i++) {
-                    indices.get(i).translate(rets, params);
-                    Arg src1 = (Arg) rets.get("dst");
-                    Arg src2 = new Imm(weights.get(i));
-                    Arg dst = Generator.addBinary("*", src1, src2);
-                    if (offset == null) {
-                        offset = dst;
-                    } else {
-                        offset = Generator.addBinary("+", offset, dst);
-                    }
+            ArrayList<Integer> weights = var.getWeights();
+            for (int i = 0; i < indices.size(); i++) {
+                indices.get(i).translate(rets, params);
+                Arg src1 = (Arg) rets.get("dst");
+                Arg src2 = new Imm(weights.get(i));
+                Arg dst = Generator.addBinary("*", src1, src2);
+                if (offset == null) {
+                    offset = dst;
+                } else {
+                    offset = Generator.addBinary("+", offset, dst);
                 }
             }
-            rets.put("offset", offset);
-            rets.put("dim", var.getDim() - indices.size());
-            if (var instanceof ConstEntry && (offset == null || offset.getType() == OpnumType.Imm)) {
-                int value;
-                if (offset == null) {
-                    value = var.getInitVal(0);
+            int dim = var.getWeights().size() - indices.size();
+            rets.put("dim", dim);
+            if (var instanceof ConstEntry && dim == 0
+                    && (offset instanceof Imm || offset == null)) {
+                if (offset != null) {
+                    rets.put("dst", new Imm(var.getInitVal(((Imm) offset).getValue())));
                 } else {
-                    value = var.getInitVal(((Imm) offset).getValue());
+                    rets.put("dst", new Imm(var.getInitVal(0)));
                 }
-                rets.put("dst", new Imm(value));
+                rets.put("offset", null);
             } else {
                 rets.put("dst", new Var(var));
+                rets.put("offset", offset);
             }
         } catch (Error e) {
             System.out.println("第 " + ident.getRow() + " 行: 未定义的标识符 " + ident.getContent() + "。");

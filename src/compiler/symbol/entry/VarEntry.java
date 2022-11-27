@@ -6,12 +6,13 @@ import java.util.List;
 public class VarEntry extends Entry {
     protected final ArrayList<Integer> shape;
     protected final ArrayList<Integer> weights;
-    protected int offset;
 
+    private boolean isFParam;
     private final List<Integer> initVals = new ArrayList<>();
 
-    public VarEntry(String name, ArrayList<Integer> shape, boolean isGlobal) {
+    public VarEntry(String name, ArrayList<Integer> shape, boolean isGlobal, boolean isFParam) {
         super(name, SymbolType.VAR, isGlobal);
+        this.isFParam = isFParam;
         this.shape = shape;
         this.weights = new ArrayList<>(shape);
         if (shape.size() > 0) {
@@ -22,27 +23,24 @@ public class VarEntry extends Entry {
         }
     }
 
-    public void addInitVal(int val) {
-        initVals.add(val);
+    public boolean isFParam() {
+        return isFParam;
     }
 
-    public int getInitVal(int index) {
-        if (index > initVals.size()) {
-            return 0;
-        }
-        return initVals.get(index);
+    public ArrayList<Integer> getShape() {
+        return shape;
+    }
+
+    public void addInitVal(int val) {
+        initVals.add(val);
     }
 
     public List<Integer> getInitVals() {
         return initVals;
     }
 
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
-    public int getOffset() {
-        return offset;
+    public int getInitVal(int index) {
+        return initVals.get(index);
     }
 
     public int size() {
@@ -62,5 +60,18 @@ public class VarEntry extends Entry {
 
     public ArrayList<Integer> getWeights() {
         return weights;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getName());
+        if (shape.size() > 0) {
+            sb.append("[]");
+            for (int i = 1; i < shape.size(); i++) {
+                sb.append("[").append(shape.get(i)).append("]");
+            }
+        }
+        return sb.toString();
     }
 }

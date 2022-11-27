@@ -53,8 +53,8 @@ public class ConstDef extends Nonterminal {
             ConstEntry entry = Generator.insertConstSymbol(ident.getContent(), ranges);
             params.put("def", entry);
             constInitVal.translate(rets, params);
-        } catch (Exception e) {
-            System.out.println("第 " + ident.getRow() + " 行: 重定义的符号" + ident.getContent());
+        } catch (Error e) {
+            System.out.println("-第 " + ident.getRow() + " 行: 重定义的符号" + ident.getContent());
             ErrorRecorder.insert(new Error(ident.getRow(), "b"));
         }
     }

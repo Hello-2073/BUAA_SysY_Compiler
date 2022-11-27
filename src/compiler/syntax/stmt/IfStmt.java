@@ -1,6 +1,8 @@
 package compiler.syntax.stmt;
 
 import compiler.representation.Generator;
+import compiler.representation.quaternion.Jump;
+import compiler.representation.quaternion.opnum.Label;
 import compiler.syntax.Syntax;
 import compiler.syntax.exp.cond.Cond;
 
@@ -34,20 +36,19 @@ public class IfStmt extends Stmt {
 
     @Override
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        Label trueForCond = Generator.allocLabel();
+        Label falseForCond = Generator.allocLabel();
+        params.put("falseForCond", falseForCond);
         cond.translate(rets, params);
-        if (stmt instanceof BlockStmt) {
-            Generator.enterScope(IF);
-            stmt.translate(rets, params);
-            Generator.exitScope();
+        stmt.translate(rets, params);
+        if (elseStmt != null) {
+            Label elseEnd = Generator.allocLabel();
+            Generator.addQuaternion(new Jump(elseEnd));
+            Generator.addLabel(falseForCond);
+            elseStmt.translate(rets, params);
+            Generator.addLabel(elseEnd);
         } else {
-            stmt.translate(rets, params);
-        }
-        if (elseStmt instanceof BlockStmt) {
-            Generator.enterScope(IF);
-            elseStmt.translate(rets, params);
-            Generator.exitScope();
-        } else if (elseStmt != null) {
-            elseStmt.translate(rets, params);
+            Generator.addLabel(falseForCond);
         }
         rets.replace("stmtType", "ifStmt");
     }

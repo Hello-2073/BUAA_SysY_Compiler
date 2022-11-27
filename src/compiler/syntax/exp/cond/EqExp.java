@@ -14,7 +14,6 @@ public class EqExp extends Nonterminal {
     private Terminal op = null;
     private RelExp relExp = null;
 
-
     public EqExp() {
         super(SyntaxType.EqExp);
     }
@@ -41,14 +40,16 @@ public class EqExp extends Nonterminal {
     @Override
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
         assert relExp != null;
-        relExp.translate(rets, params);
         if (eqExp != null) {
             assert op != null;
-            Arg src2 = (Arg) rets.get("dst");
             eqExp.translate(rets, params);
             Arg src1 = (Arg) rets.get("dst");
+            relExp.translate(rets, params);
+            Arg src2 = (Arg) rets.get("dst");
             Arg dst = Generator.addBinary(op.getContent(), src1, src2);
             rets.replace("dst", dst);
+        } else {
+            relExp.translate(rets, params);
         }
     }
 }

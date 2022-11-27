@@ -8,10 +8,12 @@ import compiler.representation.quaternion.opnum.Arg;
 import compiler.representation.quaternion.opnum.Imm;
 import compiler.representation.quaternion.opnum.Label;
 import compiler.representation.quaternion.opnum.OpnumType;
+import compiler.symbol.SymbolTable;
 import compiler.syntax.Syntax;
 import compiler.syntax.Terminal;
 import compiler.syntax.exp.Exp;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 

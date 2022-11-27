@@ -1,7 +1,11 @@
 package compiler.syntax.exp.cond;
 
 import compiler.representation.Generator;
+import compiler.representation.quaternion.Break;
+import compiler.representation.quaternion.Jump;
 import compiler.representation.quaternion.opnum.Arg;
+import compiler.representation.quaternion.opnum.Imm;
+import compiler.representation.quaternion.opnum.Label;
 import compiler.syntax.Nonterminal;
 import compiler.syntax.Syntax;
 import compiler.syntax.SyntaxType;
@@ -9,8 +13,8 @@ import compiler.syntax.SyntaxType;
 import java.util.HashMap;
 
 public class LAndExp extends Nonterminal {
-    private EqExp eqExp = null;
     private LAndExp lAndExp = null;
+    private EqExp eqExp = null;
 
     public LAndExp() {
         super(SyntaxType.LAndExp);
@@ -34,14 +38,12 @@ public class LAndExp extends Nonterminal {
     @Override
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
         assert eqExp != null;
-        eqExp.translate(rets, params);
         if (lAndExp != null) {
-            Arg src2 = (Arg) rets.get("dst");
             lAndExp.translate(rets, params);
-            Arg src1 = (Arg) rets.get("dst");
-            Arg dst = Generator.addBinary("&&", src1, src2);
-            rets.replace("dst", dst);
         }
-
+        Label falseForLAndExp = (Label) params.get("falseForLAndExp");
+        eqExp.translate(rets, params);
+        Arg dst = (Arg) rets.get("dst");
+        Generator.addBreakIf("==", dst, new Imm(0), falseForLAndExp);
     }
 }
