@@ -44,11 +44,10 @@ public class Block extends Nonterminal {
             item.translate(rets, params);
         }
         if (Generator.getCurrentScopeType() == ScopeType.FUNC
-                &&!"returnStmt".equals(rets.get("stmtType"))) {
+                && !"returnStmt".equals(rets.get("stmtType"))) {
             if ("int".equals(Generator.getCurrentFuncType())) {
-                System.out.println("第 " + rbrace.getRow() + " 行：函数无返回值。");
+                System.out.println("第 " + rbrace.getRow() + " 行：函数无返回语句。");
                 ErrorRecorder.insert(new Error(rbrace.getRow(), "g"));
-
             }
             Generator.addQuaternion(new Ret(null));
         }

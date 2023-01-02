@@ -47,7 +47,7 @@ public class LVal extends Nonterminal {
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
         try {
             VarEntry var = (VarEntry) Generator.consultSymbol(ident.getContent());
-            if (var instanceof ConstEntry && "def".equals(params.get("lValUse"))) {
+            if (var instanceof ConstEntry && "def".equals(params.get("lValUsage"))) {
                 System.out.println("第 " + ident.getRow() + " 行：为常量赋值。");
                 ErrorRecorder.insert(new Error(ident.getRow(), "h"));
             }
@@ -79,6 +79,9 @@ public class LVal extends Nonterminal {
                 rets.put("offset", offset);
             }
         } catch (Error e) {
+            rets.put("dim", null);
+            rets.put("dst", null);
+            rets.put("offset", null);
             System.out.println("第 " + ident.getRow() + " 行: 未定义的标识符 " + ident.getContent() + "。");
             ErrorRecorder.insert(new Error(ident.getRow(), "c"));
         }

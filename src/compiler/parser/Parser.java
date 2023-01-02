@@ -160,7 +160,13 @@ public class Parser {
         }
         if (tokens.getType(0) == ASSIGN) {
             varDef.addChild(getTerminal());
-            varDef.addChild(initVal());
+            if (tokens.getType(0) == GETINTTK) {
+                varDef.addChild(getTerminal());
+                mustGetTerminal(varDef, LPARENT, null);
+                mustGetTerminal(varDef, RPARENT, null);
+            } else {
+                varDef.addChild(initVal());
+            }
         }
         return varDef;
     }
@@ -295,6 +301,7 @@ public class Parser {
             case INTCON:
             case LPARENT:
             case PLUS:
+            case BITAND: ///
             case MINU:
             case NOT:
             case SEMICN:
@@ -523,7 +530,7 @@ public class Parser {
         mulExp.addChild(unaryExp());
         while (true) {
             SyntaxType type = tokens.getType(0);
-            if (type != MULT && type != DIV && type != MOD) {
+            if (type != MULT && type != DIV && type != MOD && type != BITAND) {
                 break;
             }
             MulExp tmp = new MulExp();

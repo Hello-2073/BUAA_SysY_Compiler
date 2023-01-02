@@ -39,6 +39,7 @@ public class PrimaryExp extends Nonterminal {
 
     @Override
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
+        params.put("lValUsage", "use");
         super.translate(rets, params);
         if (lVal != null && rets.get("offset") != null) {
             if ((Integer)rets.get("dim") == 0) {

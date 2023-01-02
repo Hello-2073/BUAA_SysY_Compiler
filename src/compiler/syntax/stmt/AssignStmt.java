@@ -31,7 +31,7 @@ public class AssignStmt extends Stmt {
 
     @Override
     public void translate(HashMap<String, Object> rets, HashMap<String, Object> params) {
-        params.replace("lValUsage", "def");
+        params.put("lValUsage", "def");
         lVal.translate(rets, params);
         Arg dst = (Arg) rets.get("dst");
         Arg offset = (Arg) rets.get("offset");
@@ -45,6 +45,6 @@ public class AssignStmt extends Stmt {
             rets.put("dst", dst);
         }
         rets.put("offset", null);
-        rets.replace("stmtType", "AssignStmt");
+        rets.put("stmtType", "AssignStmt");
     }
 }

@@ -23,6 +23,8 @@ public class ContinueStmt extends Stmt {
         rets.replace("stmtType", "continueStmt");
         Arg label = (Arg) params.get("whileHead");
         if (label == null) {
+            int row = ((Terminal)children.get(0)).getRow();
+            System.out.println("第 " +  row + " 行: continue语句无任何外层循环体");
             ErrorRecorder.insert(new Error(((Terminal)children.get(0)).getRow(), "m"));
         }
         Generator.addQuaternion(new Jump(label));

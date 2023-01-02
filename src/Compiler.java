@@ -32,16 +32,16 @@ public class Compiler {
         String errors = ErrorRecorder.info();
 
         Module module = Generator.getModule();
+        writeToFile(errors, "error.txt");
         System.out.println(module);
 
         Translator.reset(module);
         Translator.translate();
         Asm asm = Translator.getAsm();
-
         writeToFile(asm.toString(), "mips.txt");
 
+
         writeToFile(root.toString(), "output.txt");
-        writeToFile(errors, "error.txt");
     }
 
     private static void writeToFile(String str, String dst)

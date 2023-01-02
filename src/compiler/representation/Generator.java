@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Generator {
+    private static final boolean opt = false;
+
     private static SymbolTable symbolTable;
     private static Module module;
 
@@ -88,7 +90,7 @@ public class Generator {
     }
 
     public static Arg addBinary(String op, Arg src1, Arg src2) {
-        if (src1.getType() == OpnumType.Imm && src2.getType() == OpnumType.Imm ) {
+        if (opt && src1.getType() == OpnumType.Imm && src2.getType() == OpnumType.Imm ) {
             return Imm.calculate(op, (Imm) src1, (Imm) src2);
         } else {
             Tmp tmp = newTmp();
@@ -97,12 +99,12 @@ public class Generator {
         }
     }
 
-    public static void addFunctionCall(Label label, List<Arg> args) {
-        module.addQuaternion(new Call(label, args));
+    public static void addFunctionCall(Label label) {
+        module.addQuaternion(new Call(label));
     }
 
     public static void addBreakIf(String op, Arg src1, Arg src2, Label label) {
-        if (src1.getType() == OpnumType.Imm && src2.getType() == OpnumType.Imm ) {
+        if (opt && src1.getType() == OpnumType.Imm && src2.getType() == OpnumType.Imm ) {
              Imm res = Imm.calculate(op, (Imm) src1, (Imm) src2);
              if (res.getValue() != 0) {
                  module.addQuaternion(new Jump(label));

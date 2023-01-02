@@ -136,6 +136,8 @@ public class Lexer {
                 return SyntaxType.RETURNTK;
             case "void":
                 return SyntaxType.VOIDTK;
+            case "bitand":
+                return SyntaxType.BITAND;
             default:
                 return SyntaxType.IDENFR;
         }

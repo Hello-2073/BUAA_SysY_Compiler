@@ -5,7 +5,6 @@ import compiler.error.ErrorRecorder;
 import compiler.representation.Generator;
 import compiler.representation.quaternion.Jump;
 import compiler.representation.quaternion.opnum.Arg;
-import compiler.symbol.SymbolTable;
 import compiler.syntax.Syntax;
 import compiler.syntax.Terminal;
 
@@ -23,7 +22,9 @@ public class BreakStmt extends Stmt {
         rets.replace("stmtType", "breakStmt");
         Arg label = (Arg) params.get("whileTail");
         if (label == null) {
-            ErrorRecorder.insert(new Error(((Terminal)children.get(0)).getRow(), "m"));
+            int row = ((Terminal)children.get(0)).getRow();
+            System.out.println("第 " + row + " 行: break语句无任何外层循环体");
+            ErrorRecorder.insert(new Error(row, "m"));
         }
         Generator.addQuaternion(new Jump(label));
     }

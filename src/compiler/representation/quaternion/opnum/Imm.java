@@ -27,6 +27,8 @@ public class Imm extends Arg {
                 return new Imm(src1.getValue() > src2.getValue() ? 1 : 0);
             case "<":
                 return new Imm(src1.getValue() < src2.getValue() ? 1 : 0);
+            case "bitand":
+                return new Imm(src1.getValue() & src2.getValue());
             default:
                 throw new RuntimeException("未知运算符" + op);
         }

@@ -7,9 +7,7 @@ import compiler.representation.quaternion.*;
 import compiler.representation.quaternion.opnum.*;
 import compiler.symbol.entry.VarEntry;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class Translator {
     private static Module module;
@@ -17,12 +15,17 @@ public class Translator {
 
     private static Asm asm;
 
-    private static Registers registers;
-
     private static int stackSpace;
-    private static HashMap<Var, Integer> stackMap;
+    private static int localVarBase;
+    private static int tmpRegBase;
+    private static int saveRegBase;
+
+    private static HashMap<Arg, Integer> frameMap;
     private static HashMap<Var, String> sRegMap;
     private static HashMap<Tmp, String> tRegMap;
+
+    private static HashMap<String, Integer> regSavedByCalled;
+    private static HashMap<String, Integer> regSavedByCaller;
 
     public static Asm getAsm() {
         return asm;
@@ -31,7 +34,6 @@ public class Translator {
     public static void reset(Module module) {
         Translator.module = module;
         asm = new Asm();
-        registers = new Registers();
     }
 
     private static void loadVar(Var var, String reg) {
@@ -43,29 +45,33 @@ public class Translator {
             }
         } else {
             if (var.getDim() > 0 && !var.isFParam()) {
-                asm.addInstr("addiu", reg, "$fp", stackMap.get(var));
+                asm.addInstr("addiu", reg, "$fp", frameMap.get(var));
             } else {
-                asm.addInstr("lw", reg, stackMap.get(var) + "($fp)");
+                asm.addInstr("lw", reg, frameMap.get(var) + "($fp)");
             }
         }
     }
 
-    private static void saveVar(Var var, String reg) {
-        if (var.isGlobal()) {
-            asm.addInstr("sw", reg, var.getName() + "($zero)");
+    private static void saveVar(Arg arg, String reg) {
+        if (arg instanceof Var && ((Var) arg).isGlobal()) {
+            asm.addInstr("sw", reg, arg + "($zero)");
         } else {
-            asm.addInstr("sw", reg, stackMap.get(var)+ "($fp)");
+            asm.addInstr("sw", reg, frameMap.get(arg)+ "($fp)");
         }
     }
 
     public static String getDstReg(Arg arg) {
         switch (arg.getType()) {
             case Tmp:
-                String reg = "$t" + registers.allocTmp();
-                tRegMap.put((Tmp) arg, reg);
-                return reg;
+                if (tRegMap.containsKey(arg)) {
+                    return tRegMap.get(arg);
+                }
+                return "$v0";
             case Var:
-                return sRegMap.get(arg);
+                if (sRegMap.containsKey(arg)) {
+                    return sRegMap.get(arg);
+                }
+                return "$v0";
             default:
                 throw new RuntimeException();
         }
@@ -79,10 +85,11 @@ public class Translator {
                 asm.addInstr("li", "$v0", arg);
                 return "$v0";
             case Tmp:
-                String reg = tRegMap.get(arg);
-                tRegMap.remove(arg);
-                registers.freeTmp(reg.charAt(2) - '0');
-                return reg;
+                if (tRegMap.containsKey(arg)) {
+                    return tRegMap.get(arg);
+                }
+                asm.addInstr("lw", "$v0", frameMap.get(arg) + "($fp)");
+                return "$v0";
             case Var:
                 if (sRegMap.containsKey((Var) arg)) {
                     return sRegMap.get(arg);
@@ -102,10 +109,11 @@ public class Translator {
                 asm.addInstr("li", "$v1", arg);
                 return "$v1";
             case Tmp:
-                String reg = tRegMap.get(arg);
-                tRegMap.remove(arg);
-                registers.freeTmp(reg.charAt(2) - '0');
-                return reg;
+                if (tRegMap.containsKey(arg)) {
+                    return tRegMap.get(arg);
+                }
+                asm.addInstr("lw", "$v1", frameMap.get(arg) + "($fp)");
+                return "$v1";
             case Var:
                 if (sRegMap.containsKey((Var) arg)) {
                     return sRegMap.get(arg);
@@ -121,7 +129,7 @@ public class Translator {
         translate(module);
     }
 
-    private static void translate(Module module) {
+    private static void dataSeg(Module module) {
         asm.addLine(".data");
         HashMap<Label, String> strs = module.getConstStr();
         for (Label label : strs.keySet()) {
@@ -146,6 +154,10 @@ public class Translator {
             }
             asm.addLine(sb.toString());
         }
+    }
+
+    private static void translate(Module module) {
+        dataSeg(module);
         asm.addEmptyLine();
         asm.addLine(".text");
         asm.addInstr("move", "$fp", "$sp");
@@ -162,40 +174,72 @@ public class Translator {
     }
 
     private static void preview(Function function) {
-        registers.freeAllSave();
+        int args = 4 * function.getMaxArgNum(), vars = 0, tmpReg = 0, savedReg = 0;
         sRegMap = new HashMap<>();
-        stackMap = new HashMap<>();
-        stackSpace = 0;
+        tRegMap = new HashMap<>();
+        frameMap = new HashMap<>();
+        regSavedByCalled = new HashMap<>();
+        localVarBase = args;
         for (Var localVar : function.getLocalVars()) {
-            int i = registers.allocSave();
-            if (i != -1 && (localVar.isFParam() || localVar.getDim() == 0)) {
+            int i = function.getLocalVars().indexOf(localVar);
+            if (i < 8 && (localVar.isFParam() || localVar.getDim() == 0)) {
                 sRegMap.put(localVar, "$s" + i);
+                regSavedByCalled.put("$s" + i, 0);
             }
-            stackMap.put(localVar, stackSpace);
-            stackSpace += localVar.size();
+            frameMap.put(localVar, localVarBase + vars);
+            vars += localVar.size();
         }
-        stackSpace += 8; // $fp, $ra
-        System.out.println(function.getName() + ":" + stackMap + " in " + stackSpace);
-        System.out.println(sRegMap);
+        tmpRegBase = localVarBase + vars;
+        List<BasicBlock> basicBlocks = function.getBasicBlocks();
+        for (BasicBlock basicBlock : basicBlocks) {
+            List<Set<Tmp>> tmpGroups = basicBlock.getTmpGroups();
+            tmpReg = Math.max(tmpReg, 4 * tmpGroups.size());
+            for (int i = 0; i < tmpGroups.size(); i++) {
+                for (Tmp tmp : tmpGroups.get(i)) {
+                    if (i < 8) {
+                        tRegMap.put(tmp, "$t" + i);
+                    }
+                    frameMap.put(tmp, tmpRegBase + 4 * i);
+                }
+            }
+        }
+        saveRegBase = tmpRegBase + tmpReg;
+        for (String reg : regSavedByCalled.keySet()) {
+            regSavedByCalled.replace(reg, saveRegBase + savedReg);
+            savedReg += 4;
+        }
+        savedReg += function.isLeaf() ? 4 : 8; // $fp, $ra
+        stackSpace = saveRegBase + savedReg;
         asm.addLabel(function.getName());
+        asm.addInstr("# frame: ","saved:" + savedReg + ", tmp" + tmpReg + ", vars:" + vars + ", args:" + args);
         asm.addInstr("addi", "$sp", "$sp", -stackSpace);
-        asm.addInstr("sw", "$fp", (stackSpace - 8) + "($sp)");
-        asm.addInstr("sw", "$ra", (stackSpace - 4) + "($sp)");
+        if (function.isLeaf()) {
+            asm.addInstr("sw", "$fp", (stackSpace - 4) + "($sp)");
+        } else {
+            asm.addInstr("sw", "$ra", (stackSpace - 4) + "($sp)");
+            asm.addInstr("sw", "$fp", (stackSpace - 8) + "($sp)");
+        }
+        for (String reg : regSavedByCalled.keySet()) {
+            asm.addInstr("sw", reg, regSavedByCalled.get(reg) + "($sp)");
+        }
         asm.addInstr("move", "$fp",  "$sp");
+    }
+
+    private static void loadArgs(Function function) {
         for (int i = 0; i < function.getFParaNum(); i++) {
             Var fParam = function.getFParam(i);
             if (i <= 3) {
                 if (sRegMap.containsKey(fParam)) {
                     asm.addInstr("move",sRegMap.get(fParam), "$a" + i);
                 } else {
-                    asm.addInstr("sw","$a" + i, (4 * i) + "($fp)");
+                    asm.addInstr("sw","$a" + i, frameMap.get(fParam) + "($fp)");
                 }
             } else {
                 if (sRegMap.containsKey(fParam)) {
-                    asm.addInstr("lw", sRegMap.get(fParam), (stackSpace + 4 * (i - 4)) + "($sp)");
+                    asm.addInstr("lw", sRegMap.get(fParam), (stackSpace + 4 * i) + "($sp)");
                 } else {
-                    asm.addInstr("lw","$v0", (stackSpace + 4 * (i - 4)) + "($sp)");
-                    asm.addInstr("sw","$v0", (4 * i) + "($fp)");
+                    asm.addInstr("lw","$v0", (stackSpace + 4 * i) + "($sp)");
+                    asm.addInstr("sw","$v0", frameMap.get(fParam) + "($fp)");
                 }
             }
         }
@@ -203,17 +247,20 @@ public class Translator {
 
     private static void translate(Function function) {
         preview(function);
+        loadArgs(function);
         for (BasicBlock basicBlock : function.getBasicBlocks()) {
             translate(basicBlock);
         }
     }
 
     private static void translate(BasicBlock basicBlock) {
-        registers.freeAllTmp();
-        tRegMap = new HashMap<>();
-        Label blockName = basicBlock.getLabel();
+        regSavedByCaller = new HashMap<>();
+        for (int i = 0; i < basicBlock.getTmpGroups().size() && i < 8; i++) {
+            regSavedByCaller.put("$t" + i, tmpRegBase + 4 * i);
+        }
+        Label blockName = basicBlock.getBlockName();
         if (blockName != null) {
-            asm.addLine(basicBlock.getLabel() + ":");
+            asm.addLine(basicBlock.getBlockName() + ":");
         }
         for (Quaternion quaternion : basicBlock.getQuaternions()) {
             translate(quaternion);
@@ -233,6 +280,9 @@ public class Translator {
                 break;
             case BINARY:
                 translate((Binary) quaternion);
+                break;
+            case PUSH:
+                translate((Push) quaternion);
                 break;
             case CALL:
                 translate((Call) quaternion);
@@ -262,10 +312,10 @@ public class Translator {
         asm.addInstr("syscall");
         Arg dst = read.getDst();
         String dstReg = getDstReg(dst);
-        if (dstReg != null) {
+        if (!dstReg.equals("$v0")) {
             asm.addInstr("move", dstReg, "$v0");
         } else {
-            saveVar((Var) dst, "$v0");
+            saveVar(dst, "$v0");
         }
     }
 
@@ -286,18 +336,15 @@ public class Translator {
         String op = single.getOp();
         Arg src = single.getSrc1();
         Arg dst = single.getDst();
-        String srcReg = src instanceof Imm ? src.toString() :
-                                             getSrcReg1(src);
+        String srcReg = getSrcReg1(src);
         String dstReg = getDstReg(dst);
         String instr = op.equals("+") ? "addu":
                        op.equals("-") ? "subu":
                        op.equals("!") ? "seq": null;
         assert instr != null;
-        if (dstReg != null) {
-            asm.addInstr(instr, dstReg, "$zero", srcReg);
-        } else {
-            asm.addInstr(instr, "$v0", "$zero", srcReg);
-            saveVar((Var) dst, "$v0");
+        asm.addInstr(instr, dstReg, "$zero", srcReg);
+        if (dstReg.equals("$v0")) {
+            saveVar(dst, "$v0");
         }
     }
 
@@ -309,104 +356,80 @@ public class Translator {
         String srcReg1 = getSrcReg1(src1);
         String srcReg2 = getSrcReg2(src2);
         String dstReg = getDstReg(dst);
-        if (op.equals("%")) {
+        if (op.equals("%") || op.equals("/")) {
+            String instr = op.equals("%") ? "mfhi" : "mflo";
             asm.addInstr("div", srcReg1, srcReg2);
-            if (dstReg != null) {
-                asm.addInstr("mfhi", dstReg);
-            } else {
-                asm.addInstr("mfhi", "$v0");
-                saveVar((Var) dst, "$v0");
-            }
-        } else {
+            asm.addInstr(instr, dstReg);
+        } else  {
             String instr = op.equals("+") ? "addu":
                         op.equals("-") ? "subu":
                         op.equals("*") ? "mulu":
-                        op.equals("/") ? "div":
                         op.equals("==") ? "seq":
                         op.equals("!=") ? "sne":
                         op.equals(">=") ? "sge":
                         op.equals("<=") ? "sle":
                         op.equals(">") ? "sgt":
-                        op.equals("<") ? "slt" : null;
+                        op.equals("<") ? "slt" :
+                                op.equals("bitand") ? "and" : null;
             assert instr != null;
-            if (dstReg != null) {
-                asm.addInstr(instr, dstReg, srcReg1, srcReg2);
+            asm.addInstr(instr, dstReg, srcReg1, srcReg2);
+        }
+        if (dstReg.equals("$v0")) {
+            saveVar(dst, "$v0");
+        }
+    }
+
+    private static void translate(Push push) {
+        int i = push.getN();
+        Arg arg = push.getSrc1();
+        if (arg instanceof Imm) {
+            if (i < 4) {
+                asm.addInstr("li", "$a" + i, arg);
             } else {
-                asm.addInstr(instr, "$v0", srcReg1, srcReg2);
-                saveVar((Var) dst, "$v0");
+                asm.addInstr("li", "$v0", arg);
+                asm.addInstr("sw", "$v0", (4 * i) + "($sp)");
+            }
+        } else {
+            String argReg = getSrcReg1(arg);
+            if (i < 4) {
+                asm.addInstr("move", "$a" + i, argReg);
+            } else {
+                asm.addInstr("sw", argReg,  (4 * i) + "($sp)");
             }
         }
     }
 
     private static void translate(Call call) {
-        for (Var arg : sRegMap.keySet()) {
-            String reg = sRegMap.get(arg);
-            asm.addInstr("sw", reg, stackMap.get(arg) + "($fp)");
-        }
-        ArrayList<String> tRegs = new ArrayList<>();
-        for (Arg arg : tRegMap.keySet()) {
-            tRegs.add(tRegMap.get(arg));
-        }
-        if (tRegs.size() > 0) {
-            asm.addInstr("addiu", "$sp", "$sp", -4 * tRegs.size());
-        }
-        for (int i =0; i < tRegs.size(); i++) {
-            asm.addInstr("sw", tRegs.get(i), (4 * i) + "($sp)");
-        }
-        List<Arg> args = call.getArgs();
-        if (args.size() > 4) {
-            asm.addInstr("addiu","$sp", "$sp", -4 * (args.size() - 4));
-        }
-        for (int i = 0; i < args.size(); i++) {
-            Arg arg = args.get(i);
-            if (arg.getType() == OpnumType.Imm) {
-                if (i < 4) {
-                    asm.addInstr("li", "$a" + i, arg);
-                } else {
-                    asm.addInstr("li", "$v0", arg);
-                    asm.addInstr("sw", "$v0", (4 * (i - 4)) + "($sp)");
-                }
-            } else {
-                String argReg = getSrcReg1(args.get(i));
-                if (i < 4) {
-                    asm.addInstr("move", "$a" + i, argReg);
-                } else {
-                    asm.addInstr("sw", argReg,  (4 * (i - 4)) + "($sp)");
-                }
-            }
+        for (String tmpReg : regSavedByCaller.keySet()) {
+            asm.addInstr("sw", tmpReg, regSavedByCaller.get(tmpReg) + "($fp)");
         }
         asm.addInstr("jal", call.getLabel());
         asm.addInstr("nop");
-        if (args.size() > 4) {
-            asm.addInstr("addiu", "$sp", "$sp", 4 * (args.size() - 4));
-        }
-        for (int i =0; i < tRegs.size(); i++) {
-            asm.addInstr("lw", tRegs.get(i), (4 * i) + "($sp)");
-        }
-        if (tRegs.size() > 0) {
-            asm.addInstr("addiu", "$sp", "$sp", 4 * tRegs.size());
-        }
-        for (Var arg : sRegMap.keySet()) {
-            String reg = sRegMap.get(arg);
-            asm.addInstr("lw", reg, stackMap.get(arg) + "($fp)");
+        for (String tmpReg : regSavedByCaller.keySet()) {
+            asm.addInstr("lw", tmpReg, regSavedByCaller.get(tmpReg) + "($fp)");
         }
     }
 
     private static void translate(Ret ret) {
         Arg retValue = ret.getSrc();
-        if (retValue != null) {
-            if (retValue.getType() == OpnumType.Imm) {
-                asm.addInstr("li", "$v0", ((Imm) retValue).getValue());
-            } else {
-                String reg = getSrcReg1(retValue);
-                if (!reg.equals("$v0")) {
-                    asm.addInstr("move","$v0", reg);
-                }
+        if (retValue instanceof Imm) {
+            asm.addInstr("li", "$v0", ((Imm) retValue).getValue());
+        } else if (retValue != null) {
+            String reg = getSrcReg1(retValue);
+            if (!reg.equals("$v0")) {
+                asm.addInstr("move","$v0", reg);
             }
         }
-        asm.addInstr("lw", "$ra", (stackSpace - 4) + "($fp)");
         asm.addInstr("addiu","$sp", "$fp", stackSpace);
-        asm.addInstr("lw","$fp", (stackSpace - 8) + "($fp)");
+        for (String reg : regSavedByCalled.keySet()) {
+            asm.addInstr("lw", reg, regSavedByCalled.get(reg) + "($fp)");
+        }
+        if (function.isLeaf()) {
+            asm.addInstr("lw","$fp", (stackSpace - 4) + "($fp)");
+        } else {
+            asm.addInstr("lw", "$ra", (stackSpace - 4) + "($fp)");
+            asm.addInstr("lw","$fp", (stackSpace - 8) + "($fp)");
+        }
         asm.addInstr("jr","$ra");
         asm.addInstr("nop");
     }
@@ -428,7 +451,7 @@ public class Translator {
             asm.addInstr("sw", getSrcReg2(src2), "0($v0)");
         } else {
             asm.addInstr("addu", "$v0", "$v0", "$fp");
-            asm.addInstr("sw", getSrcReg2(src2), stackMap.get(dst) + "($v0)");
+            asm.addInstr("sw", getSrcReg2(src2), frameMap.get(dst) + "($v0)");
         }
     }
 
@@ -437,24 +460,24 @@ public class Translator {
         Var src1 = (Var) load.getSrc1();
         Arg src2 = load.getSrc2();
         Arg dst = load.getDst();
-        String srcReg2 = getSrcReg2(src2);
         String dstReg = getDstReg(dst);
         if (src2 instanceof Imm) {
-            asm.addInstr("li", "$v1", src2);
-            srcReg2 = "$v1";
+            asm.addInstr("li", "$v0", 4 * ((Imm) src2).getValue());
+        } else {
+            asm.addInstr("sll", "$v0", getSrcReg2(src2), 2);
         }
         if (src1.isGlobal()) {
-            asm.addInstr("sll", "$v0", srcReg2, 2);
-            asm.addInstr("lw", dstReg, src1+"($v0)");
+            asm.addInstr("lw", dstReg, src1 + "($v0)");
         } else if (src1.isFParam()) {
-            asm.addInstr("sll", "$v1", srcReg2, 2);
             String srcReg1 = getSrcReg1(src1);
-            asm.addInstr("addu", "$v0", srcReg1, "$v1");
+            asm.addInstr("addu", "$v0", srcReg1, "$v0");
             asm.addInstr("lw", dstReg, "0($v0)");
         }else {
-            asm.addInstr("sll", "$v0", srcReg2, 2);
             asm.addInstr("addu", "$v0", "$v0", "$fp");
-            asm.addInstr("lw", dstReg, stackMap.get(src1)+"($v0)");
+            asm.addInstr("lw", dstReg, frameMap.get(src1) + "($v0)");
+        }
+        if (dstReg.equals("$v0")) {
+            saveVar(dst, "$v0");
         }
     }
 
@@ -467,21 +490,16 @@ public class Translator {
         String op = bk.getOp();
         Arg src1 = bk.getSrc1();
         Arg src2 = bk.getSrc2();
+        Arg dst = bk.getDst();
         String srcReg1 = getSrcReg1(src1);
-        String srcReg2;
-        if (src2.getType() == OpnumType.Imm) {
-            asm.addInstr("li","$v1", src2);
-            srcReg2 = "$v1";
-        } else {
-            srcReg2 = getDstReg(src2);
-        }
+        String srcReg2 = getSrcReg2(src2);
         String instr = op.equals("==") ? "beq":
                        op.equals("!=") ? "bne":
                        op.equals("<")  ? "blz":
                        op.equals(">")  ? "bgz":
                        op.equals("<=") ? "ble":
                        op.equals(">=") ? "bge": null;
-        asm.addInstr(instr, srcReg1, srcReg2, bk.getDst().toString());
+        asm.addInstr(instr, srcReg1, srcReg2, dst.toString());
         asm.addInstr("nop");
     }
 }

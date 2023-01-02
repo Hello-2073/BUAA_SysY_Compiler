@@ -30,6 +30,7 @@ public class MulExp extends Nonterminal {
             case MULT:
             case DIV:
             case MOD:
+            case BITAND:
                 op = (Terminal) child;
                 break;
             case UnaryExp:

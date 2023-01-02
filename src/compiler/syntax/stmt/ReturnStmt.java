@@ -37,13 +37,17 @@ public class ReturnStmt extends Stmt {
         rets.put("stmtType", "returnStmt");
         if ("int".equals(Generator.getCurrentFuncType())) {
             if (returnValue == null) {
+                System.out.println("第 " + returntk.getRow() + " 行: 缺少返回值。");
                 ErrorRecorder.insert(new Error(returntk.getRow(), "g"));
+                Generator.addQuaternion(new Ret(null));
+            } else {
+                returnValue.translate(rets, params);
+                Arg dst = (Arg) rets.get("dst");
+                Generator.addQuaternion(new Ret(dst));
             }
-            returnValue.translate(rets, params);
-            Arg dst = (Arg) rets.get("dst");
-            Generator.addQuaternion(new Ret(dst));
         } else {
             if (returnValue != null) {
+                System.out.println("第 " + returntk.getRow() + "行: 多余返回值。");
                 ErrorRecorder.insert(new Error(returntk.getRow(), "f"));
             }
             Generator.addQuaternion(new Ret(null));

@@ -71,6 +71,7 @@ public enum SyntaxType {
     RBRACK,
     LBRACE,
     RBRACE,
+    BITAND,
     EOF,
     ERROR
 }

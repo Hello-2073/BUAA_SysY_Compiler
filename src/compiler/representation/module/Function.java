@@ -1,5 +1,7 @@
 package compiler.representation.module;
 
+import compiler.representation.quaternion.Call;
+import compiler.representation.quaternion.Push;
 import compiler.representation.quaternion.Quaternion;
 import compiler.representation.quaternion.opnum.Label;
 import compiler.representation.quaternion.opnum.Var;
@@ -15,20 +17,20 @@ public class Function {
     private final ArrayList<Var> localVars = new ArrayList<>();
 
     private boolean isLeaf = true;
+    private int maxArgNum = 0;
+
 
     private BasicBlock curBasicBlock;
+
+    private final ArrayList<Call> calls = new ArrayList<>();
 
     public Function(FuncEntry funcEntry) {
         this.funcEntry = funcEntry;
         newBasicBlock(null);
     }
 
-    public void setLeaf(boolean leaf) {
-        isLeaf = leaf;
-    }
-
     public boolean isLeaf() {
-        return isLeaf;
+        return calls.size() == 0;
     }
 
     public String getName() {
@@ -59,6 +61,19 @@ public class Function {
 
     public void addQuaternion(Quaternion quaternion) {
         curBasicBlock.addQuaternion(quaternion);
+        if (quaternion instanceof Call) {
+            calls.add((Call) quaternion);
+        } else if (quaternion instanceof Push) {
+            maxArgNum = Math.max(maxArgNum, ((Push) quaternion).getN() + 1);
+        }
+    }
+
+    public ArrayList<Call> getCalls() {
+        return calls;
+    }
+
+    public int getMaxArgNum() {
+        return maxArgNum;
     }
 
     public void addLocalVar(Var localVar) {

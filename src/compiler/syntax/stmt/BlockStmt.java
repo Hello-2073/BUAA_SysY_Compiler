@@ -23,5 +23,6 @@ public class BlockStmt extends Stmt {
         Generator.enterScope(ScopeType.BASIC);
         block.translate(rets, params);
         Generator.exitScope();
+        rets.put("stmtType", "blockStmt");
     }
 }
